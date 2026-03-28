@@ -465,34 +465,89 @@ function ScanLanding() {
   );
 }
 
+function DashboardBackground() {
+  const dataStreams = Array.from({ length: 20 }, (_, i) => {
+    const seed = (i * 7 + 3) % 20;
+    return {
+      left: `${(i / 20) * 100 + (seed % 4)}%`,
+      duration: `${4 + (seed % 5)}s`,
+      delay: `${(seed * 0.3) % 6}s`,
+      height: `${40 + (seed * 3)}px`,
+    };
+  });
+
+  return (
+    <>
+      {/* Canvas Particle Network */}
+      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+        <ParticleNetwork />
+      </div>
+
+      {/* Grid Overlay */}
+      <div className="fixed inset-0 bg-grid-pattern opacity-30 pointer-events-none" style={{ zIndex: 0 }} />
+
+      {/* Matrix Data Streams */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
+        {dataStreams.map((s, i) => (
+          <div
+            key={i}
+            className="data-stream-col"
+            style={{
+              left: s.left,
+              height: s.height,
+              ["--duration" as string]: s.duration,
+              ["--delay" as string]: s.delay,
+              opacity: 0.4,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Scan Sweep Line */}
+      <div className="scan-sweep-line" style={{ opacity: 0.5 }} />
+
+      {/* Floating Gradient Orbs */}
+      <div className="fixed top-[15%] left-[10%] w-[350px] h-[350px] rounded-full bg-ecg-green/[0.025] blur-[100px] pointer-events-none orb-float-1" style={{ zIndex: 0 }} />
+      <div className="fixed top-[50%] right-[5%] w-[300px] h-[300px] rounded-full bg-accent-cyan/[0.03] blur-[90px] pointer-events-none orb-float-2" style={{ zIndex: 0 }} />
+      <div className="fixed bottom-[5%] left-[30%] w-[250px] h-[250px] rounded-full bg-accent-purple/[0.025] blur-[80px] pointer-events-none orb-float-3" style={{ zIndex: 0 }} />
+    </>
+  );
+}
+
 function Dashboard() {
   const { isDemo } = useReport();
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Header />
+    <div className="min-h-screen bg-background text-foreground relative">
+      {/* Animated Background */}
+      <DashboardBackground />
 
-      {/* Demo Mode Badge */}
-      {isDemo && (
-        <div className="fixed top-[68px] left-1/2 -translate-x-1/2 z-40">
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px] font-mono">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            Demo Mode — facebook/react
+      {/* Content Layer */}
+      <div className="relative" style={{ zIndex: 1 }}>
+        <Header />
+
+        {/* Demo Mode Badge */}
+        {isDemo && (
+          <div className="fixed top-[68px] left-1/2 -translate-x-1/2 z-40">
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px] font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              Demo Mode — facebook/react
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <main>
-        <HeroScore />
-        <VitalSigns />
-        <ECGSparklines />
-        <CausalChain />
-        <TimeMachine />
-        <DXGhost />
-        <Recommendations />
-        <BeforeAfter />
-      </main>
-      <Footer />
+        <main>
+          <HeroScore />
+          <VitalSigns />
+          <ECGSparklines />
+          <CausalChain />
+          <TimeMachine />
+          <DXGhost />
+          <Recommendations />
+          <BeforeAfter />
+        </main>
+        <Footer />
+      </div>
     </div>
   );
 }
