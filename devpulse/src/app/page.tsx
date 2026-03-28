@@ -223,14 +223,14 @@ function ScanLanding() {
       {/* ═══════════════════════════════════════════
            MAIN CONTENT
          ═══════════════════════════════════════════ */}
-      <div className="relative flex flex-col items-center justify-center min-h-screen px-4 py-16" style={{ zIndex: 10 }}>
+      <div className="relative flex flex-col items-center justify-center h-screen px-4 py-4" style={{ zIndex: 10 }}>
 
         {/* Status Badge */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-ecg-green/5 border border-ecg-green/20 mb-8"
+          className="flex items-center gap-2 px-3 py-1 rounded-full bg-ecg-green/5 border border-ecg-green/20 mb-3"
         >
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ecg-green opacity-75" />
@@ -246,19 +246,19 @@ function ScanLanding() {
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ delay: 0.2, type: "spring", stiffness: 150, damping: 15 }}
-          className="relative mb-6"
+          className="relative mb-3"
         >
-          <div className="relative flex items-center justify-center w-24 h-24 rounded-3xl bg-ecg-green/10 border border-ecg-green/20 neon-border-pulse">
-            <Activity className="w-12 h-12 text-ecg-green drop-shadow-[0_0_12px_rgba(0,255,65,0.5)]" />
-            <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-ecg-green/80 animate-pulse-glow" />
-            <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-ecg-green/30 animate-ping" />
+          <div className="relative flex items-center justify-center w-16 h-16 rounded-2xl bg-ecg-green/10 border border-ecg-green/20 neon-border-pulse">
+            <Activity className="w-8 h-8 text-ecg-green drop-shadow-[0_0_12px_rgba(0,255,65,0.5)]" />
+            <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-ecg-green/80 animate-pulse-glow" />
+            <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-ecg-green/30 animate-ping" />
           </div>
           {/* Orbiting dot */}
           <motion.div
             className="absolute w-1.5 h-1.5 rounded-full bg-accent-cyan"
             animate={{ rotate: 360 }}
             transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-            style={{ top: -4, left: "50%", transformOrigin: "0 56px" }}
+            style={{ top: -4, left: "50%", transformOrigin: "0 40px" }}
           />
         </motion.div>
 
@@ -267,10 +267,10 @@ function ScanLanding() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="text-center mb-2"
+          className="text-center mb-1"
         >
           <h1
-            className="text-6xl md:text-7xl font-black tracking-tight glitch-text"
+            className="text-5xl md:text-6xl font-black tracking-tight glitch-text"
             data-text="DevPulse"
             style={{ textShadow: "0 0 20px rgba(0,255,65,0.3), 0 0 60px rgba(0,255,65,0.1)" }}
           >
@@ -285,7 +285,7 @@ function ScanLanding() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
-          className="flex items-center gap-3 mb-4"
+          className="flex items-center gap-3 mb-2"
         >
           <div className="h-px w-12 bg-gradient-to-r from-transparent to-ecg-green/50" />
           <p className="text-sm font-mono text-ecg-green/90 uppercase tracking-[0.4em]">Repository X-Ray</p>
@@ -297,7 +297,7 @@ function ScanLanding() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
-          className="text-base text-muted-light max-w-lg text-center leading-relaxed mb-10"
+          className="text-sm text-muted-light max-w-md text-center leading-snug mb-4"
         >
           Expose hidden friction in your codebase. Get an{" "}
           <span className="text-ecg-green font-semibold">ECG-style diagnostic report</span>{" "}
@@ -309,7 +309,7 @@ function ScanLanding() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10 w-full max-w-2xl"
+          className="grid grid-cols-4 gap-2 mb-5 w-full max-w-2xl"
         >
           {features.map((f, i) => (
             <motion.div
@@ -318,13 +318,13 @@ function ScanLanding() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.9 + i * 0.1 }}
               whileHover={{ y: -4, borderColor: "rgba(0,255,65,0.3)" }}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface/40 backdrop-blur-sm border border-border/50 hover:bg-surface/60 transition-all cursor-default group"
+              className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-surface/40 backdrop-blur-sm border border-border/50 hover:bg-surface/60 transition-all cursor-default group"
             >
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-ecg-green/5 border border-ecg-green/10 group-hover:border-ecg-green/30 group-hover:bg-ecg-green/10 transition-all">
-                <f.icon className="w-5 h-5 text-ecg-green/70 group-hover:text-ecg-green transition-colors" />
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-ecg-green/5 border border-ecg-green/10 group-hover:border-ecg-green/30 group-hover:bg-ecg-green/10 transition-all">
+                <f.icon className="w-4 h-4 text-ecg-green/70 group-hover:text-ecg-green transition-colors" />
               </div>
-              <span className="text-xs font-semibold text-foreground/90">{f.label}</span>
-              <span className="text-[10px] text-muted text-center leading-tight">{f.desc}</span>
+              <span className="text-[11px] font-semibold text-foreground/90">{f.label}</span>
+              <span className="text-[9px] text-muted text-center leading-tight">{f.desc}</span>
             </motion.div>
           ))}
         </motion.div>
@@ -339,7 +339,7 @@ function ScanLanding() {
           {/* Animated border glow */}
           <div className="absolute -inset-px rounded-2xl bg-gradient-to-r from-ecg-green/20 via-accent-cyan/20 to-accent-purple/20 blur-sm opacity-60" />
 
-          <div className="relative bg-surface/80 backdrop-blur-xl border border-ecg-green/10 rounded-2xl p-6 space-y-4 neon-border-pulse">
+          <div className="relative bg-surface/80 backdrop-blur-xl border border-ecg-green/10 rounded-2xl p-5 space-y-3 neon-border-pulse">
             {/* Top green line */}
             <div className="absolute top-0 left-[5%] right-[5%] h-px bg-gradient-to-r from-transparent via-ecg-green/40 to-transparent" />
 
@@ -368,7 +368,7 @@ function ScanLanding() {
                 onKeyDown={(e) => e.key === "Enter" && handleScan()}
                 placeholder="https://github.com/user/repo"
                 disabled={isScanning}
-                className="w-full bg-background/90 border border-border/60 rounded-xl px-4 py-4 text-sm font-mono text-foreground placeholder:text-muted/30 focus:outline-none focus:border-ecg-green/40 focus:ring-2 focus:ring-ecg-green/10 focus:shadow-[0_0_20px_rgba(0,255,65,0.08)] transition-all disabled:opacity-50"
+                className="w-full bg-background/90 border border-border/60 rounded-xl px-4 py-3 text-sm font-mono text-foreground placeholder:text-muted/30 focus:outline-none focus:border-ecg-green/40 focus:ring-2 focus:ring-ecg-green/10 focus:shadow-[0_0_20px_rgba(0,255,65,0.08)] transition-all disabled:opacity-50"
               />
               {repoPath && (
                 <motion.div
@@ -397,7 +397,7 @@ function ScanLanding() {
               <button
                 onClick={handleScan}
                 disabled={!repoPath.trim() || isScanning}
-                className="flex-1 flex items-center justify-center gap-2.5 bg-gradient-to-r from-ecg-green/20 to-ecg-green/10 border border-ecg-green/30 text-ecg-green rounded-xl px-4 py-4 text-sm font-bold hover:from-ecg-green/30 hover:to-ecg-green/15 hover:border-ecg-green/50 hover:shadow-[0_0_30px_rgba(0,255,65,0.2)] transition-all disabled:opacity-30 disabled:cursor-not-allowed group"
+                className="flex-1 flex items-center justify-center gap-2.5 bg-gradient-to-r from-ecg-green/20 to-ecg-green/10 border border-ecg-green/30 text-ecg-green rounded-xl px-4 py-3 text-sm font-bold hover:from-ecg-green/30 hover:to-ecg-green/15 hover:border-ecg-green/50 hover:shadow-[0_0_30px_rgba(0,255,65,0.2)] transition-all disabled:opacity-30 disabled:cursor-not-allowed group"
               >
                 {isScanning ? (
                   <>
@@ -417,7 +417,7 @@ function ScanLanding() {
               <button
                 onClick={loadDemo}
                 disabled={isScanning}
-                className="flex items-center gap-2 bg-surface/60 border border-border/60 text-muted-light rounded-xl px-5 py-4 text-sm font-medium hover:text-foreground hover:border-ecg-green/20 hover:bg-ecg-green/5 hover:shadow-[0_0_15px_rgba(0,255,65,0.08)] transition-all disabled:opacity-40"
+                className="flex items-center gap-2 bg-surface/60 border border-border/60 text-muted-light rounded-xl px-5 py-3 text-sm font-medium hover:text-foreground hover:border-ecg-green/20 hover:bg-ecg-green/5 hover:shadow-[0_0_15px_rgba(0,255,65,0.08)] transition-all disabled:opacity-40"
               >
                 <Eye className="w-4 h-4" />
                 Demo
@@ -434,7 +434,7 @@ function ScanLanding() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.5 }}
-          className="flex flex-col items-center gap-4 mt-8"
+          className="flex flex-col items-center gap-2 mt-4"
         >
           {/* GitHub + Info */}
           <div className="flex items-center gap-3">
