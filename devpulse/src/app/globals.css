@@ -185,3 +185,161 @@ body {
 .diff-neutral {
   border-left: 3px solid transparent;
 }
+
+/* ═══════════════════════════════════════════════════
+   PREMIUM LANDING PAGE ANIMATIONS
+   ═══════════════════════════════════════════════════ */
+
+/* Horizontal scan line sweeping down */
+@keyframes scanSweep {
+  0% { top: -2px; opacity: 0; }
+  5% { opacity: 1; }
+  95% { opacity: 0.6; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.scan-sweep-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, #00ff41 20%, #00d4ff 50%, #00ff41 80%, transparent 100%);
+  box-shadow: 0 0 15px 3px rgba(0, 255, 65, 0.3), 0 0 40px 8px rgba(0, 212, 255, 0.15);
+  animation: scanSweep 6s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Matrix data stream */
+@keyframes dataStream {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.3; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+.data-stream-col {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 80px;
+  background: linear-gradient(180deg, transparent, #00ff41, transparent);
+  opacity: 0;
+  animation: dataStream var(--duration) linear var(--delay) infinite;
+  pointer-events: none;
+}
+
+/* Glitch text effect */
+@keyframes glitch1 {
+  0%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+  20% { clip-path: inset(20% 0 60% 0); transform: translate(-2px, 1px); }
+  40% { clip-path: inset(50% 0 30% 0); transform: translate(2px, -1px); }
+  60% { clip-path: inset(10% 0 70% 0); transform: translate(-1px, 2px); }
+  80% { clip-path: inset(70% 0 10% 0); transform: translate(1px, -2px); }
+}
+
+@keyframes glitch2 {
+  0%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+  20% { clip-path: inset(60% 0 20% 0); transform: translate(2px, -1px); }
+  40% { clip-path: inset(30% 0 50% 0); transform: translate(-2px, 1px); }
+  60% { clip-path: inset(70% 0 10% 0); transform: translate(1px, 2px); }
+  80% { clip-path: inset(10% 0 70% 0); transform: translate(-1px, -2px); }
+}
+
+.glitch-text {
+  position: relative;
+}
+
+.glitch-text::before,
+.glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.glitch-text::before {
+  color: #00d4ff;
+  animation: glitch1 4s infinite linear;
+  opacity: 0.5;
+}
+
+.glitch-text::after {
+  color: #a855f7;
+  animation: glitch2 4s infinite linear;
+  opacity: 0.3;
+}
+
+/* Neon border pulse */
+@keyframes neonPulse {
+  0%, 100% { box-shadow: 0 0 5px rgba(0, 255, 65, 0.1), 0 0 20px rgba(0, 255, 65, 0.05), inset 0 0 10px rgba(0, 255, 65, 0.02); }
+  50% { box-shadow: 0 0 10px rgba(0, 255, 65, 0.2), 0 0 40px rgba(0, 255, 65, 0.1), 0 0 80px rgba(0, 255, 65, 0.05), inset 0 0 20px rgba(0, 255, 65, 0.03); }
+}
+
+.neon-border-pulse {
+  animation: neonPulse 3s ease-in-out infinite;
+}
+
+/* Rotating gradient border */
+@keyframes rotateBorder {
+  0% { --angle: 0deg; }
+  100% { --angle: 360deg; }
+}
+
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.rotating-border {
+  border: 1px solid transparent;
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  animation: rotateBorder 4s linear infinite;
+}
+
+/* Typing cursor blink */
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.cursor-blink {
+  animation: cursorBlink 1s step-end infinite;
+}
+
+/* Breathing glow for orbs */
+@keyframes orbFloat1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(30px, -20px) scale(1.1); }
+  50% { transform: translate(-20px, 20px) scale(0.95); }
+  75% { transform: translate(10px, -30px) scale(1.05); }
+}
+
+@keyframes orbFloat2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-20px, 30px) scale(1.05); }
+  50% { transform: translate(30px, -10px) scale(1.1); }
+  75% { transform: translate(-10px, -20px) scale(0.95); }
+}
+
+@keyframes orbFloat3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(20px, 20px) scale(1.1); }
+  66% { transform: translate(-30px, -10px) scale(0.9); }
+}
+
+.orb-float-1 { animation: orbFloat1 12s ease-in-out infinite; }
+.orb-float-2 { animation: orbFloat2 15s ease-in-out infinite; }
+.orb-float-3 { animation: orbFloat3 10s ease-in-out infinite; }
+
+/* Status text flicker */
+@keyframes statusFlicker {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+  52% { opacity: 0.4; }
+  54% { opacity: 1; }
+}
