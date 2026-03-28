@@ -1,6 +1,7 @@
 # PRD document
 DevPulse_PRD.docx
 prd_text.txt
+devpulse_final_roadmap.html
 
 # dependencies
 devpulse/node_modules/
@@ -8,6 +9,11 @@ devpulse/node_modules/
 # next.js build
 devpulse/.next/
 devpulse/out/
+
+# Python cache
+__pycache__/
+analyzers/__pycache__/
+*.pyc
 
 # misc
 .DS_Store
