@@ -159,13 +159,16 @@ function ScanLanding() {
     { icon: Sparkles, label: "Time Machine", desc: "30-day forecast" },
   ];
 
-  // Data stream columns for matrix effect
-  const dataStreams = Array.from({ length: 25 }, (_, i) => ({
-    left: `${(i / 25) * 100 + Math.random() * 3}%`,
-    duration: `${3 + Math.random() * 5}s`,
-    delay: `${Math.random() * 6}s`,
-    height: `${40 + Math.random() * 80}px`,
-  }));
+  // Data stream columns for matrix effect (deterministic to avoid hydration mismatch)
+  const dataStreams = Array.from({ length: 25 }, (_, i) => {
+    const seed = (i * 7 + 3) % 25;
+    return {
+      left: `${(i / 25) * 100 + (seed % 4)}%`,
+      duration: `${3 + (seed % 5)}s`,
+      delay: `${(seed * 0.25) % 6}s`,
+      height: `${40 + (seed * 3.2)}px`,
+    };
+  });
 
   return (
     <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
