@@ -57,7 +57,7 @@ function ScanLanding() {
             value={repoPath}
             onChange={(e) => setRepoPath(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleScan()}
-            placeholder="C:\path\to\your\repo"
+            placeholder="https://github.com/user/repo  or  C:\path\to\repo"
             disabled={isScanning}
             className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm font-mono text-foreground placeholder:text-muted/50 focus:outline-none focus:border-ecg-green/50 focus:ring-1 focus:ring-ecg-green/20 transition-colors disabled:opacity-50"
           />
@@ -65,7 +65,7 @@ function ScanLanding() {
           {error && (
             <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-400/10 rounded-lg px-3 py-2">
               <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>API unavailable — loaded demo data instead</span>
+              <span>{error} — loaded demo data instead</span>
             </div>
           )}
 
@@ -101,7 +101,7 @@ function ScanLanding() {
 
         {/* Hint */}
         <p className="text-[11px] text-muted/60 text-center mt-4 font-mono">
-          Requires Python 3.10+ installed locally • Git repo with .git directory
+          Supports GitHub URLs (auto-clone) and local paths • Requires Python 3.10+ &amp; Git
         </p>
       </motion.div>
     </div>

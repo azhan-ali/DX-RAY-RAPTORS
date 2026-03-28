@@ -1,12 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
-import { spawn } from "child_process";
+import { spawn, execSync } from "child_process";
 import path from "path";
+import os from "os";
+import fs from "fs";
 import type { ScanReport } from "./types";
+
+function isGitUrl(input: string): boolean {
+  return (
+    input.startsWith("https://github.com/") ||
+    input.startsWith("http://github.com/") ||
+    input.startsWith("git@github.com:") ||
+    input.startsWith("https://gitlab.com/") ||
+    input.startsWith("https://bitbucket.org/") ||
+    (input.includes("github.com") && input.includes("/"))
+  );
+}
+
+function cloneRepo(url: string): string {
+  // Extract repo name from URL
+  const parts = url.replace(/\.git$/, "").split("/");
+  const repoName = parts[parts.length - 1] || "repo";
+  const tmpDir = path.join(os.tmpdir(), "devpulse-scans", `${repoName}-${Date.now()}`);
+
+  fs.mkdirSync(tmpDir, { recursive: true });
+
+  console.log(`[DevPulse] Cloning ${url} → ${tmpDir}`);
+
+  // Shallow clone for speed (only need recent history)
+  execSync(`git clone --depth 100 "${url}" "${tmpDir}"`, {
+    timeout: 120000,
+    stdio: "pipe",
+  });
+
+  console.log(`[DevPulse] Clone complete: ${tmpDir}`);
+  return tmpDir;
+}
 
 function runPythonAnalyzer(script: string, repoPath: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const analyzersDir = path.join(process.cwd(), "..", "analyzers");
     const scriptPath = path.join(analyzersDir, script);
+
+    console.log(`[DevPulse] Running: python "${scriptPath}" "${repoPath}"`);
 
     const proc = spawn("python", [scriptPath, repoPath], {
       cwd: analyzersDir,
@@ -49,13 +84,44 @@ async function runAnalyzerSafe(script: string, repoPath: string): Promise<Record
 }
 
 export async function POST(request: NextRequest) {
+  let clonedDir: string | null = null;
+
   try {
     const body = await request.json();
-    const repoPath: string = body.repoPath;
+    let repoPath: string = body.repoPath?.trim();
 
     if (!repoPath) {
       return NextResponse.json(
         { error: "repoPath is required" },
+        { status: 400 }
+      );
+    }
+
+    // If it's a GitHub/GitLab URL, clone it first
+    if (isGitUrl(repoPath)) {
+      try {
+        clonedDir = cloneRepo(repoPath);
+        repoPath = clonedDir;
+      } catch (cloneErr) {
+        console.error("[DevPulse] Clone failed:", cloneErr);
+        return NextResponse.json(
+          { error: `Failed to clone repository. Make sure the URL is correct and the repo is public. Details: ${String(cloneErr)}` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Verify the path exists and is a git repo
+    if (!fs.existsSync(repoPath)) {
+      return NextResponse.json(
+        { error: `Path does not exist: ${repoPath}` },
+        { status: 400 }
+      );
+    }
+
+    if (!fs.existsSync(path.join(repoPath, ".git"))) {
+      return NextResponse.json(
+        { error: `Not a git repository: ${repoPath}. Make sure the path has a .git folder.` },
         { status: 400 }
       );
     }
@@ -110,5 +176,15 @@ export async function POST(request: NextRequest) {
       { error: "Internal scan error", details: String(err) },
       { status: 500 }
     );
+  } finally {
+    // Cleanup cloned repo after scan
+    if (clonedDir) {
+      try {
+        fs.rmSync(clonedDir, { recursive: true, force: true });
+        console.log(`[DevPulse] Cleaned up: ${clonedDir}`);
+      } catch {
+        // ignore cleanup errors
+      }
+    }
   }
 }
