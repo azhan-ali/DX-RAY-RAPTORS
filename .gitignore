@@ -1,0 +1,18 @@
+# PRD document
+DevPulse_PRD.docx
+prd_text.txt
+
+# dependencies
+devpulse/node_modules/
+
+# next.js build
+devpulse/.next/
+devpulse/out/
+
+# misc
+.DS_Store
+*.pem
+.env*
+.vercel
+*.tsbuildinfo
+devpulse/next-env.d.ts
