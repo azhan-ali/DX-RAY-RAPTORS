@@ -438,33 +438,49 @@ function ScanLanding() {
 }
 
 function Dashboard() {
-  const { isDemo } = useReport();
+  const { isDemo, report } = useReport();
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Header />
+    <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
 
-      {/* Demo Mode Badge */}
-      {isDemo && (
-        <div className="fixed top-[68px] left-1/2 -translate-x-1/2 z-40">
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px] font-mono">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            Demo Mode — facebook/react
+      {/* ─── Background Layer 1: Grid Pattern ─── */}
+      <div className="fixed inset-0 bg-grid-pattern opacity-30 pointer-events-none" style={{ zIndex: 0 }} />
+
+      {/* ─── Background Layer 2: Floating Gradient Orbs ─── */}
+      <div className="fixed top-[10%] left-[5%] w-[500px] h-[500px] rounded-full bg-ecg-green/[0.03] blur-[120px] pointer-events-none orb-float-1" style={{ zIndex: 0 }} />
+      <div className="fixed top-[40%] right-[5%] w-[400px] h-[400px] rounded-full bg-accent-cyan/[0.04] blur-[100px] pointer-events-none orb-float-2" style={{ zIndex: 0 }} />
+      <div className="fixed bottom-[10%] left-[30%] w-[350px] h-[350px] rounded-full bg-accent-purple/[0.03] blur-[90px] pointer-events-none orb-float-3" style={{ zIndex: 0 }} />
+      <div className="fixed top-[70%] left-[60%] w-[300px] h-[300px] rounded-full bg-ecg-green/[0.02] blur-[80px] pointer-events-none orb-float-1" style={{ zIndex: 0 }} />
+
+      {/* ─── Background Layer 3: Subtle scan line ─── */}
+      <div className="fixed inset-0 scan-overlay pointer-events-none opacity-20" style={{ zIndex: 0 }} />
+
+      {/* ─── Content ─── */}
+      <div className="relative" style={{ zIndex: 1 }}>
+        <Header />
+
+        {/* Demo Mode Badge */}
+        {isDemo && (
+          <div className="fixed top-[68px] left-1/2 -translate-x-1/2 z-40">
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px] font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              Demo Mode — {report?.repoInfo?.name ?? "demo"}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <main>
-        <HeroScore />
-        <VitalSigns />
-        <ECGSparklines />
-        <CausalChain />
-        <TimeMachine />
-        <DXGhost />
-        <Recommendations />
-        <BeforeAfter />
-      </main>
-      <Footer />
+        <main>
+          <HeroScore />
+          <VitalSigns />
+          <ECGSparklines />
+          <CausalChain />
+          <TimeMachine />
+          <DXGhost />
+          <Recommendations />
+          <BeforeAfter />
+        </main>
+        <Footer />
+      </div>
     </div>
   );
 }
