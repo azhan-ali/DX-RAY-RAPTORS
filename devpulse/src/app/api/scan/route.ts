@@ -165,6 +165,9 @@ export async function POST(request: NextRequest) {
       anomalyEvents: (scoreResult?.anomalyEvents as ScanReport["anomalyEvents"]) ?? [],
       beforeAfter: (scoreResult?.beforeAfter as ScanReport["beforeAfter"]) ?? [],
       devHoursWasted: (scoreResult?.devHoursWasted as number) ?? 0,
+      devHoursBreakdown: (scoreResult?.devHoursBreakdown as ScanReport["devHoursBreakdown"]) ?? [],
+      flakyClassification: (testResult?.flakyClassification as ScanReport["flakyClassification"]) ?? undefined,
+      ciAnalysis: (ghostResult?.ciAnalysis as ScanReport["ciAnalysis"]) ?? undefined,
       scanTimestamp: new Date().toISOString(),
       mode: "live",
     };

@@ -18,6 +18,9 @@ interface ScanReport {
   anomalyEvents: any[];
   beforeAfter: any[];
   devHoursWasted: any;
+  devHoursBreakdown?: any[];
+  flakyClassification?: any;
+  ciAnalysis?: any;
   scanTimestamp: string;
   mode: "live" | "demo";
 }
@@ -52,6 +55,8 @@ function buildDemoReport(): ScanReport {
       { label: "Time-to-Review", before: "26 hrs", after: "8 hrs", improvement: "-69%", icon: "Zap", color: "#a855f7" },
     ],
     devHoursWasted: demo.devHoursWasted,
+    devHoursBreakdown: demo.devHoursBreakdown,
+    flakyClassification: demo.flakyClassification,
     scanTimestamp: new Date().toISOString(),
     mode: "demo",
   };

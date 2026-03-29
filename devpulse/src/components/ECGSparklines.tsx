@@ -120,7 +120,7 @@ export default function ECGSparklines() {
                     </span>
                     {anomaly && (
                       <span className="mt-1 text-[10px] font-mono text-critical">
-                        ⚠ {anomaly.date} • Z={anomaly.zScore}σ
+                        ANOMALY {anomaly.date}
                       </span>
                     )}
                   </div>

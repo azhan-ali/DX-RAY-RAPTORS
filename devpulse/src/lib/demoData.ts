@@ -314,46 +314,94 @@ export const ghostPatches: GhostPatch[] = [
 export const anomalyEvents = [
   {
     date: "Mar 8",
-    dimension: "CI/Build",
-    description: "CI/Build anomaly detected: dropped 12 pts (Z=-3.2σ)",
-    severity: "critical",
-    zScore: -3.2,
-    drop: 12,
-    method: "z-score",
+    dimension: "ci-build",
+    description: "CI build time spiked from 12 min to 24 min",
+    commitRange: "a3f21c8...b7e49d1",
+    zScore: 3.2,
   },
   {
     date: "Mar 15",
-    dimension: "Tests",
-    description: "Tests anomaly detected: dropped 23 pts (Z=-2.8σ)",
-    severity: "critical",
-    zScore: -2.8,
-    drop: 23,
-    method: "z-score",
+    dimension: "test-stability",
+    description: "Flaky test rate jumped from 8% to 31%",
+    commitRange: "c4d89e2...d1a73f5",
+    zScore: 2.8,
   },
   {
     date: "Mar 22",
-    dimension: "Reviews",
-    description: "Reviews anomaly detected: dropped 8 pts (Z=-2.4σ)",
-    severity: "warning",
-    zScore: -2.4,
-    drop: 8,
-    method: "z-score",
+    dimension: "review-lag",
+    description: "Average review time exceeded 48 hours",
+    commitRange: "e5f12a9...f8b34c7",
+    zScore: 2.4,
   },
 ];
 
-export const rootCauseSummary = [
-  { id: "race_condition", label: "Race Condition", icon: "Zap", color: "#ef4444", score: 18, percentage: 39 },
-  { id: "env_pollution", label: "Env Pollution", icon: "Globe", color: "#a855f7", score: 14, percentage: 30 },
-  { id: "order_dependency", label: "Order Dependency", icon: "ArrowDownUp", color: "#f59e0b", score: 9, percentage: 20 },
-  { id: "true_flaky", label: "True Flaky", icon: "Shuffle", color: "#00d4ff", score: 5, percentage: 11 },
-];
-
 export const devHoursWasted = {
-  total: 14.3,
+  total: 42.3,
   breakdown: [
     { dimension: "CI/Build", hours: 6.8, percentage: 47.6 },
     { dimension: "Test Flakiness", hours: 4.2, percentage: 29.4 },
     { dimension: "Review Lag", hours: 3.1, percentage: 21.7 },
     { dimension: "Doc Drift", hours: 0.2, percentage: 1.3 },
   ],
+};
+
+export const devHoursBreakdown = [
+  {
+    dimension: "CI/Build",
+    dimensionId: "ci_build",
+    score: 38,
+    totalHours: 14.0,
+    issues: [
+      { issue: "CI builds take too long — context switching overhead", hoursPerMonth: 10.5, severity: "high" as const },
+      { issue: "No dependency caching — every build downloads from scratch", hoursPerMonth: 3.5, severity: "high" as const },
+    ],
+  },
+  {
+    dimension: "Tests",
+    dimensionId: "test_stability",
+    score: 45,
+    totalHours: 12.0,
+    issues: [
+      { issue: "Flaky tests causing false failures — manual verification needed", hoursPerMonth: 12.0, severity: "high" as const },
+    ],
+  },
+  {
+    dimension: "Reviews",
+    dimensionId: "code_review",
+    score: 35,
+    totalHours: 9.5,
+    issues: [
+      { issue: "Slow review turnaround — blocking deployments", hoursPerMonth: 9.5, severity: "high" as const },
+    ],
+  },
+  {
+    dimension: "Velocity",
+    dimensionId: "commit_velocity",
+    score: 62,
+    totalHours: 2.0,
+    issues: [
+      { issue: "Commit cadence could improve — some flow friction", hoursPerMonth: 2.0, severity: "low" as const },
+    ],
+  },
+  {
+    dimension: "Docs",
+    dimensionId: "doc_freshness",
+    score: 28,
+    totalHours: 5.5,
+    issues: [
+      { issue: "Stale documentation — onboarding and debugging slower", hoursPerMonth: 5.5, severity: "medium" as const },
+    ],
+  },
+];
+
+export const flakyClassification = {
+  primaryCause: "race_condition",
+  primaryCauseLabel: "Race Condition — timing-dependent code (sleep, wait, async)",
+  distribution: {
+    race_condition: 14,
+    order_dependency: 6,
+    env_pollution: 9,
+    true_flaky: 3,
+  },
+  totalIndicators: 32,
 };

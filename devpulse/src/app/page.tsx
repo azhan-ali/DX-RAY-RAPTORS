@@ -13,7 +13,6 @@ import TimeMachine from "@/components/TimeMachine";
 import DXGhost from "@/components/DXGhost";
 import Recommendations from "@/components/Recommendations";
 import BeforeAfter from "@/components/BeforeAfter";
-import FlakyRootCause from "@/components/FlakyRootCause";
 import Footer from "@/components/Footer";
 
 /* ──────────────────────────────────────────────────────
@@ -160,16 +159,6 @@ function ScanLanding() {
     { icon: Sparkles, label: "Time Machine", desc: "30-day forecast" },
   ];
 
-  // Data stream columns for matrix effect (deterministic to avoid hydration mismatch)
-  const dataStreams = Array.from({ length: 25 }, (_, i) => {
-    const seed = (i * 7 + 3) % 25;
-    return {
-      left: `${(i / 25) * 100 + (seed % 4)}%`,
-      duration: `${3 + (seed % 5)}s`,
-      delay: `${(seed * 0.25) % 6}s`,
-      height: `${40 + (seed * 3.2)}px`,
-    };
-  });
 
   return (
     <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
@@ -180,24 +169,6 @@ function ScanLanding() {
       {/* ─── LAYER 2: Grid Overlay ─── */}
       <div className="absolute inset-0 bg-grid-pattern opacity-40" style={{ zIndex: 2 }} />
 
-      {/* ─── LAYER 3: Matrix Data Streams ─── */}
-      <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 2 }}>
-        {dataStreams.map((s, i) => (
-          <div
-            key={i}
-            className="data-stream-col"
-            style={{
-              left: s.left,
-              height: s.height,
-              ["--duration" as string]: s.duration,
-              ["--delay" as string]: s.delay,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* ─── LAYER 4: Horizontal Scan Line ─── */}
-      <div className="scan-sweep-line" />
 
       {/* ─── LAYER 5: Floating Gradient Orbs ─── */}
       <div className="absolute top-[20%] left-[15%] w-[400px] h-[400px] rounded-full bg-ecg-green/[0.04] blur-[100px] pointer-events-none orb-float-1" style={{ zIndex: 2 }} />
@@ -487,7 +458,6 @@ function Dashboard() {
         <HeroScore />
         <VitalSigns />
         <ECGSparklines />
-        <FlakyRootCause />
         <CausalChain />
         <TimeMachine />
         <DXGhost />

@@ -83,117 +83,95 @@ def analyze_test_file(repo_path, filepath):
     for pattern in test_patterns:
         test_count += len(re.findall(pattern, content))
 
-    # ── Flaky Root Cause Classification ──
-    # Each category has weighted patterns; highest total wins.
-    ROOT_CAUSE_PATTERNS = {
-        "race_condition": {
-            "description": "Timing-dependent: async races, sleeps, or missing awaits",
-            "patterns": [
-                (r"sleep\(", 3),
-                (r"time\.sleep\(", 3),
-                (r"Thread\.sleep\(", 3),
-                (r"setTimeout\(", 3),
-                (r"setInterval\(", 2),
-                (r"await\s+new\s+Promise", 2),
-                (r"race\s*\(", 3),
-                (r"\.then\(", 1),
-                (r"async\s+(?:function|def|\()", 1),
-                (r"waitFor\(", 2),
-                (r"waitUntil\(", 2),
-                (r"\.resolves", 1),
-                (r"Promise\.all\(", 2),
-                (r"concurrent", 2),
-                (r"threading", 2),
-                (r"asyncio", 1),
-            ],
-        },
-        "order_dependency": {
-            "description": "Tests depend on execution order or shared mutable state",
-            "patterns": [
-                (r"beforeAll\(", 2),
-                (r"afterAll\(", 2),
-                (r"beforeEach\(", 1),
-                (r"afterEach\(", 1),
-                (r"setUp\b", 2),
-                (r"tearDown\b", 2),
-                (r"@Before\b", 2),
-                (r"@After\b", 2),
-                (r"global\s+\w+", 3),
-                (r"shared.*state", 3),
-                (r"class\s+\w+.*Test.*:", 1),
-                (r"self\.\w+\s*=", 1),
-                (r"static\s+\w+", 2),
-                (r"singleton", 3),
-                (r"\.getInstance\(", 3),
-                (r"module\.exports\s*=.*\{", 1),
-            ],
-        },
-        "env_pollution": {
-            "description": "External dependencies: env vars, network, filesystem, DB",
-            "patterns": [
-                (r"process\.env", 3),
-                (r"os\.environ", 3),
-                (r"getenv\(", 3),
-                (r"fetch\(", 3),
-                (r"axios\.", 3),
-                (r"requests\.(get|post|put|delete)", 3),
-                (r"http\.(get|post)", 3),
-                (r"localhost", 2),
-                (r"127\.0\.0\.1", 2),
-                (r"\.connect\(", 3),
-                (r"database|mongodb|postgres|mysql|redis", 3),
-                (r"fs\.(read|write|unlink|mkdir)", 3),
-                (r"open\(.*['\"]w['\"]", 3),
-                (r"tempfile|tmp|\/tmp\/", 2),
-                (r"docker|container", 2),
-                (r"\.env\b", 2),
-            ],
-        },
-        "true_flaky": {
-            "description": "Non-deterministic: random values, dates, or UUIDs",
-            "patterns": [
-                (r"random\(", 4),
-                (r"Math\.random\(", 4),
-                (r"randint\(", 4),
-                (r"randrange\(", 4),
-                (r"uuid", 3),
-                (r"Date\.now\(", 3),
-                (r"new Date\(", 2),
-                (r"datetime\.now\(", 3),
-                (r"time\.time\(", 3),
-                (r"@flaky", 4),
-                (r"flaky", 3),
-                (r"@retry", 3),
-                (r"\.retry\(", 3),
-                (r"skip.*flaky", 4),
-                (r"nondeterministic|non-deterministic", 4),
-                (r"seed\(", 2),
-            ],
-        },
+    # Classify flaky root causes into 4 categories
+    flaky_categories = {
+        "race_condition": [
+            r"sleep\(",
+            r"setTimeout\(",
+            r"time\.sleep\(",
+            r"Thread\.sleep\(",
+            r"asyncio\.sleep\(",
+            r"await\s+new\s+Promise.*setTimeout",
+            r"waitFor\(",
+            r"waitUntil\(",
+            r"\.pause\(",
+            r"race\s*condition",
+            r"concurrent",
+            r"threading",
+            r"mutex",
+            r"lock\(",
+        ],
+        "order_dependency": [
+            r"beforeAll\(",
+            r"afterAll\(",
+            r"setUp\(",
+            r"tearDown\(",
+            r"@Before\b",
+            r"@After\b",
+            r"shared.*state",
+            r"global\s+\w+\s*=",
+            r"cls\.\w+\s*=",
+            r"self\.__class__\.\w+\s*=",
+            r"\.shared\b",
+            r"singleton",
+        ],
+        "env_pollution": [
+            r"process\.env",
+            r"os\.environ",
+            r"getenv\(",
+            r"ENV\[",
+            r"mock\.(patch|Mock|MagicMock)",
+            r"jest\.mock\(",
+            r"sinon\.(stub|spy|mock)",
+            r"monkeypatch",
+            r"\.restore\(",
+            r"\.reset\(",
+            r"cleanup",
+            r"tmp|temp.*dir",
+            r"random\(",
+            r"Math\.random\(",
+            r"uuid",
+            r"Date\.now\(",
+        ],
+        "true_flaky": [
+            r"\.retry\(",
+            r"@retry",
+            r"@flaky",
+            r"flaky",
+            r"skip.*flaky",
+            r"intermittent",
+            r"unreliable",
+            r"fragile",
+            r"known.*fail",
+            r"TODO.*fix.*test",
+            r"FIXME.*test",
+            r"xfail",
+            r"@pytest\.mark\.skip",
+            r"\.skip\(",
+        ],
     }
 
     flaky_score = 0
-    root_cause_scores = {}
-    root_cause_hits = {}
+    category_scores = {}
+    category_evidence = {}
 
-    for cause, info in ROOT_CAUSE_PATTERNS.items():
-        cause_score = 0
-        hits = []
-        for pattern, weight in info["patterns"]:
-            matches = len(re.findall(pattern, content, re.IGNORECASE))
-            if matches > 0:
-                cause_score += matches * weight
-                hits.append({"pattern": pattern, "count": matches, "weight": weight})
-        root_cause_scores[cause] = cause_score
-        root_cause_hits[cause] = hits
-        flaky_score += cause_score
+    for category, patterns in flaky_categories.items():
+        cat_score = 0
+        evidence = []
+        for pattern in patterns:
+            matches = re.findall(pattern, content, re.IGNORECASE)
+            if matches:
+                cat_score += len(matches)
+                evidence.append({"pattern": pattern, "count": len(matches)})
+        category_scores[category] = cat_score
+        if evidence:
+            category_evidence[category] = evidence[:3]  # top 3 evidence per category
+        flaky_score += cat_score
 
-    # Determine primary root cause (highest score wins)
-    primary_cause = None
-    primary_cause_desc = None
+    # Determine primary root cause
+    primary_cause = "none"
     if flaky_score > 0:
-        primary_cause = max(root_cause_scores, key=root_cause_scores.get)
-        primary_cause_desc = ROOT_CAUSE_PATTERNS[primary_cause]["description"]
+        primary_cause = max(category_scores, key=category_scores.get)
 
     lines = len(content.split("\n"))
 
@@ -203,12 +181,8 @@ def analyze_test_file(repo_path, filepath):
         "lines": lines,
         "flakyScore": flaky_score,
         "rootCause": primary_cause,
-        "rootCauseDescription": primary_cause_desc,
-        "rootCauseBreakdown": {
-            cause: {"score": score, "hitCount": len(root_cause_hits[cause])}
-            for cause, score in root_cause_scores.items()
-            if score > 0
-        },
+        "categoryScores": category_scores,
+        "evidence": category_evidence,
     }
 
 
@@ -314,39 +288,31 @@ def analyze_tests(repo_path):
             "value": val,
         })
 
-    # Identify top flaky files
+    # Identify top flaky files with root cause classification
     flaky_files = sorted(test_analyses, key=lambda x: x["flakyScore"], reverse=True)[:5]
 
-    # Aggregate root cause breakdown across all files
-    aggregate_causes = {"race_condition": 0, "order_dependency": 0, "env_pollution": 0, "true_flaky": 0}
+    # Aggregate root cause distribution across all test files
+    root_cause_totals = {"race_condition": 0, "order_dependency": 0, "env_pollution": 0, "true_flaky": 0}
     for ta in test_analyses:
-        if ta.get("rootCauseBreakdown"):
-            for cause, info in ta["rootCauseBreakdown"].items():
-                aggregate_causes[cause] = aggregate_causes.get(cause, 0) + info["score"]
+        for cat, score in ta.get("categoryScores", {}).items():
+            root_cause_totals[cat] = root_cause_totals.get(cat, 0) + score
 
-    # Build root cause summary (sorted by score desc)
-    root_cause_summary = []
-    cause_labels = {
-        "race_condition": {"label": "Race Condition", "icon": "Zap", "color": "#ef4444"},
-        "order_dependency": {"label": "Order Dependency", "icon": "ArrowDownUp", "color": "#f59e0b"},
-        "env_pollution": {"label": "Env Pollution", "icon": "Globe", "color": "#a855f7"},
-        "true_flaky": {"label": "True Flaky", "icon": "Shuffle", "color": "#00d4ff"},
-    }
-    total_cause_score = sum(aggregate_causes.values()) or 1
-    for cause, score in sorted(aggregate_causes.items(), key=lambda x: x[1], reverse=True):
-        if score > 0:
-            meta = cause_labels.get(cause, {"label": cause, "icon": "HelpCircle", "color": "#666"})
-            root_cause_summary.append({
-                "id": cause,
-                "label": meta["label"],
-                "icon": meta["icon"],
-                "color": meta["color"],
-                "score": score,
-                "percentage": round(score / total_cause_score * 100),
-            })
+    # Overall primary root cause
+    overall_primary = "none"
+    if sum(root_cause_totals.values()) > 0:
+        overall_primary = max(root_cause_totals, key=root_cause_totals.get)
 
     # Previous score
     prev_test_score = max(0, min(100, test_score + 3))
+
+    # Human-readable root cause labels
+    cause_labels = {
+        "race_condition": "Race Condition — timing-dependent code (sleep, wait, async)",
+        "order_dependency": "Order Dependency — tests depend on shared state or execution order",
+        "env_pollution": "Environment Pollution — mocks not cleaned up, env vars leaking, temp files",
+        "true_flaky": "True Flaky — explicitly marked flaky, known intermittent failures",
+        "none": "No flaky patterns detected",
+    }
 
     output = {
         "testStability": {
@@ -360,18 +326,23 @@ def analyze_tests(repo_path):
             "flakyScore": total_flaky_score,
             "avgChurn": round(avg_churn, 1),
         },
+        "flakyClassification": {
+            "primaryCause": overall_primary,
+            "primaryCauseLabel": cause_labels.get(overall_primary, "Unknown"),
+            "distribution": root_cause_totals,
+            "totalIndicators": sum(root_cause_totals.values()),
+        },
         "flakyFiles": [
             {
                 "file": f["file"],
                 "flakyScore": f["flakyScore"],
                 "testCount": f["testCount"],
-                "rootCause": f.get("rootCause"),
-                "rootCauseDescription": f.get("rootCauseDescription"),
-                "rootCauseBreakdown": f.get("rootCauseBreakdown", {}),
+                "rootCause": f.get("rootCause", "none"),
+                "categoryScores": f.get("categoryScores", {}),
+                "evidence": f.get("evidence", {}),
             }
             for f in flaky_files if f["flakyScore"] > 0
         ],
-        "rootCauseSummary": root_cause_summary,
     }
 
     return output

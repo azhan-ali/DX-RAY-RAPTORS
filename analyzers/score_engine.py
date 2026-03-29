@@ -9,7 +9,6 @@ import json
 import subprocess
 import sys
 import os
-import math
 from datetime import datetime, timedelta
 
 
@@ -45,43 +44,57 @@ def classify_status(score):
 def detect_anomalies(signals, dimension_name, z_threshold=2.0):
     """
     Detect anomaly events using Z-score statistical method.
-    Computes mean and std of day-over-day changes, then flags
-    any change whose Z-score exceeds the threshold.
-    Also identifies the exact date the metric first degraded.
+    Z-score = (value - mean) / std_dev
+    A Z-score > threshold (default 2.0) means the value is a statistical outlier.
+    Also detects day-over-day drops as a secondary method.
     """
-    if len(signals) < 3:
-        return []
-
-    # Compute day-over-day deltas
-    deltas = []
-    for i in range(1, len(signals)):
-        deltas.append(signals[i]["value"] - signals[i - 1]["value"])
-
-    # Mean and standard deviation of deltas
-    n = len(deltas)
-    mean_delta = sum(deltas) / n
-    variance = sum((d - mean_delta) ** 2 for d in deltas) / n
-    std_delta = math.sqrt(variance) if variance > 0 else 1.0  # avoid div-by-zero
+    import math
 
     anomalies = []
-    for i, delta in enumerate(deltas):
-        # Z-score: how many std devs this delta is from the mean
-        z_score = (delta - mean_delta) / std_delta
+    if len(signals) < 3:
+        return anomalies
 
-        # We care about negative spikes (drops), so z_score will be very negative
-        if z_score < -z_threshold:
-            actual_drop = abs(delta)
-            severity = "critical" if z_score < -(z_threshold + 1.5) else "warning"
+    values = [s["value"] for s in signals]
+    n = len(values)
+    mean = sum(values) / n
+    variance = sum((v - mean) ** 2 for v in values) / n
+    std_dev = math.sqrt(variance) if variance > 0 else 1.0
 
+    for i in range(n):
+        val = values[i]
+        z_score = (mean - val) / std_dev  # negative Z = below mean = bad
+
+        if z_score >= z_threshold:
+            # This point is statistically significantly below average
+            severity = "critical" if z_score >= 2.5 else "warning"
             anomalies.append({
-                "date": signals[i + 1]["date"],
+                "date": signals[i]["date"],
                 "dimension": dimension_name,
-                "description": f"{dimension_name} anomaly detected: dropped {actual_drop} pts (Z={z_score:.1f}σ)",
+                "description": f"{dimension_name} anomaly detected (Z-score: {z_score:.1f}σ below mean). Score dropped to {val} vs avg {mean:.0f}",
                 "severity": severity,
                 "zScore": round(z_score, 2),
-                "drop": round(actual_drop, 1),
-                "method": "z-score",
+                "value": val,
+                "mean": round(mean, 1),
+                "stdDev": round(std_dev, 1),
             })
+
+        # Also detect sudden day-over-day drops
+        if i > 0:
+            drop = values[i - 1] - val
+            if drop >= 20 and z_score >= 1.5:
+                # Only flag drops that are also statistically significant
+                already_flagged = any(a["date"] == signals[i]["date"] and a["dimension"] == dimension_name for a in anomalies)
+                if not already_flagged:
+                    anomalies.append({
+                        "date": signals[i]["date"],
+                        "dimension": dimension_name,
+                        "description": f"{dimension_name} sudden drop of {drop} points in one day (Z: {z_score:.1f}σ)",
+                        "severity": "critical" if drop >= 30 else "warning",
+                        "zScore": round(z_score, 2),
+                        "value": val,
+                        "mean": round(mean, 1),
+                        "stdDev": round(std_dev, 1),
+                    })
 
     return anomalies
 
@@ -406,16 +419,92 @@ def compute_overall(repo_path):
     overall_score = int(sum(d["score"] * w for d, w in zip(dimensions, weights)))
     prev_overall = int(sum(d["previousScore"] * w for d, w in zip(dimensions, weights)))
 
-    # --- Dev Hours Wasted ---
-    # Estimate based on poor scores
+    # --- Dev Hours Wasted (granular per-issue breakdown) ---
     hours_wasted = 0
+    dev_hours_breakdown = []
+
     for dim in dimensions:
-        if dim["score"] < 30:
-            hours_wasted += 15
-        elif dim["score"] < 50:
-            hours_wasted += 8
-        elif dim["score"] < 70:
-            hours_wasted += 3
+        dim_hours = 0
+        issues = []
+
+        if dim["id"] == "ci_build":
+            if dim["score"] < 30:
+                issues.append({"issue": "CI pipeline critically slow — devs waiting on builds", "hoursPerMonth": 18.0, "severity": "critical"})
+                dim_hours += 18.0
+            elif dim["score"] < 50:
+                issues.append({"issue": "CI builds take too long — context switching overhead", "hoursPerMonth": 10.5, "severity": "high"})
+                dim_hours += 10.5
+            elif dim["score"] < 70:
+                issues.append({"issue": "CI could be faster — minor wait time overhead", "hoursPerMonth": 4.2, "severity": "medium"})
+                dim_hours += 4.2
+
+            # Check for specific CI issues
+            if ci_data and ci_data.get("buildPerformance", {}).get("hasCaching") is False:
+                issues.append({"issue": "No dependency caching — every build downloads from scratch", "hoursPerMonth": 3.5, "severity": "high"})
+                dim_hours += 3.5
+
+        elif dim["id"] == "test_stability":
+            if dim["score"] < 30:
+                issues.append({"issue": "Severe test flakiness — constant reruns and false alarms", "hoursPerMonth": 20.0, "severity": "critical"})
+                dim_hours += 20.0
+            elif dim["score"] < 50:
+                issues.append({"issue": "Flaky tests causing false failures — manual verification needed", "hoursPerMonth": 12.0, "severity": "high"})
+                dim_hours += 12.0
+            elif dim["score"] < 70:
+                issues.append({"issue": "Occasional test instability — some reruns required", "hoursPerMonth": 4.8, "severity": "medium"})
+                dim_hours += 4.8
+
+            # Flaky-specific cost
+            flaky_count = test_data.get("testStability", {}).get("flakyScore", 0) if test_data else 0
+            if flaky_count > 5:
+                extra = round(flaky_count * 0.8, 1)
+                issues.append({"issue": f"{flaky_count} flaky indicators found — each costs investigation time", "hoursPerMonth": extra, "severity": "high"})
+                dim_hours += extra
+
+        elif dim["id"] == "commit_velocity":
+            if dim["score"] < 30:
+                issues.append({"issue": "Very low commit frequency — large PRs cause merge conflicts", "hoursPerMonth": 8.0, "severity": "high"})
+                dim_hours += 8.0
+            elif dim["score"] < 50:
+                issues.append({"issue": "Infrequent commits — bottleneck in development flow", "hoursPerMonth": 5.0, "severity": "medium"})
+                dim_hours += 5.0
+            elif dim["score"] < 70:
+                issues.append({"issue": "Commit cadence could improve — some flow friction", "hoursPerMonth": 2.0, "severity": "low"})
+                dim_hours += 2.0
+
+        elif dim["id"] == "code_review":
+            if dim["score"] < 30:
+                issues.append({"issue": "Review bottleneck — PRs sitting unreviewed for days", "hoursPerMonth": 16.0, "severity": "critical"})
+                dim_hours += 16.0
+            elif dim["score"] < 50:
+                issues.append({"issue": "Slow review turnaround — blocking deployments", "hoursPerMonth": 9.5, "severity": "high"})
+                dim_hours += 9.5
+            elif dim["score"] < 70:
+                issues.append({"issue": "Review lag above ideal — some PRs wait too long", "hoursPerMonth": 3.5, "severity": "medium"})
+                dim_hours += 3.5
+
+        elif dim["id"] == "doc_freshness":
+            if dim["score"] < 30:
+                issues.append({"issue": "Documentation severely outdated — devs waste time figuring things out", "hoursPerMonth": 10.0, "severity": "high"})
+                dim_hours += 10.0
+            elif dim["score"] < 50:
+                issues.append({"issue": "Stale documentation — onboarding and debugging slower", "hoursPerMonth": 5.5, "severity": "medium"})
+                dim_hours += 5.5
+            elif dim["score"] < 70:
+                issues.append({"issue": "Some docs need updating — minor friction", "hoursPerMonth": 2.0, "severity": "low"})
+                dim_hours += 2.0
+
+        hours_wasted += dim_hours
+        if issues:
+            dev_hours_breakdown.append({
+                "dimension": dim["shortName"],
+                "dimensionId": dim["id"],
+                "score": dim["score"],
+                "totalHours": round(dim_hours, 1),
+                "issues": issues,
+            })
+
+    hours_wasted = round(hours_wasted, 1)
 
     # --- Recommendations ---
     recommendations = generate_recommendations(dimensions)
@@ -447,6 +536,7 @@ def compute_overall(repo_path):
         "anomalyEvents": sorted(all_anomalies, key=lambda a: a["severity"] == "critical", reverse=True)[:10],
         "beforeAfter": before_after,
         "devHoursWasted": hours_wasted,
+        "devHoursBreakdown": dev_hours_breakdown,
     }
 
     return output

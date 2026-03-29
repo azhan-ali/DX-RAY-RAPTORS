@@ -118,8 +118,8 @@ export default function Recommendations() {
                   <div key={i} className="relative flex gap-3 pb-5 last:pb-0">
                     {/* Dot */}
                     <div className="relative z-10 flex-shrink-0 mt-1">
-                      <div className={`w-[23px] h-[23px] rounded-full bg-surface border-2 flex items-center justify-center ${event.severity === "critical" ? "border-critical" : "border-warning"}`}>
-                        <span className={`w-2 h-2 rounded-full ${event.severity === "critical" ? "bg-critical" : "bg-warning"}`} />
+                      <div className="w-[23px] h-[23px] rounded-full bg-surface border-2 border-critical flex items-center justify-center">
+                        <span className="w-2 h-2 rounded-full bg-critical" />
                       </div>
                     </div>
 
@@ -129,18 +129,15 @@ export default function Recommendations() {
                         <span className="text-xs font-mono font-semibold text-foreground">
                           {event.date}
                         </span>
-                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${event.severity === "critical" ? "text-critical bg-critical/10 border border-critical/20" : "text-warning bg-warning/10 border border-warning/20"}`}>
-                          Z={event.zScore}σ
-                        </span>
-                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${event.severity === "critical" ? "text-critical bg-critical/10" : "text-warning bg-warning/10"}`}>
-                          -{event.drop} pts
+                        <span className="text-[10px] font-mono text-critical px-1.5 py-0.5 rounded bg-critical/10 border border-critical/20">
+                          z={event.zScore}
                         </span>
                       </div>
                       <p className="text-xs text-muted-light leading-relaxed mb-1">
                         {event.description}
                       </p>
                       <p className="text-[10px] font-mono text-muted">
-                        {event.dimension} • {event.method}
+                        Commits: {event.commitRange}
                       </p>
                     </div>
                   </div>

@@ -38,6 +38,14 @@ export interface ForecastPoint {
   doNothing: number | null;
 }
 
+export interface SimulatedOutcome {
+  applied: boolean;
+  beforeMetrics: Record<string, string>;
+  afterMetrics: Record<string, string>;
+  estimatedImprovement: string;
+  riskLevel: string;
+}
+
 export interface GhostPatch {
   id: number;
   title: string;
@@ -46,6 +54,9 @@ export interface GhostPatch {
   diff: string;
   impact: string;
   confidence: number;
+  patchType?: string;
+  simulatedOutcome?: SimulatedOutcome;
+  sourceIssue?: Record<string, string>;
 }
 
 export interface Recommendation {
@@ -63,6 +74,31 @@ export interface AnomalyEvent {
   dimension: string;
   description: string;
   severity: "critical" | "warning" | "info";
+  zScore?: number;
+  value?: number;
+  mean?: number;
+  stdDev?: number;
+}
+
+export interface DevHoursIssue {
+  issue: string;
+  hoursPerMonth: number;
+  severity: "critical" | "high" | "medium" | "low";
+}
+
+export interface DevHoursBreakdownItem {
+  dimension: string;
+  dimensionId: string;
+  score: number;
+  totalHours: number;
+  issues: DevHoursIssue[];
+}
+
+export interface FlakyClassification {
+  primaryCause: string;
+  primaryCauseLabel: string;
+  distribution: Record<string, number>;
+  totalIndicators: number;
 }
 
 export interface BeforeAfterMetric {
@@ -93,6 +129,9 @@ export interface ScanReport {
   anomalyEvents: AnomalyEvent[];
   beforeAfter: BeforeAfterMetric[];
   devHoursWasted: number;
+  devHoursBreakdown?: DevHoursBreakdownItem[];
+  flakyClassification?: FlakyClassification;
+  ciAnalysis?: Record<string, unknown>;
   scanTimestamp: string;
   mode: "live" | "demo";
 }
