@@ -12,8 +12,7 @@ import {
   TrendingDown,
 } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
-import { dimensions } from "@/lib/demoData";
-import type { Dimension } from "@/lib/demoData";
+import { useReport } from "@/lib/ReportContext";
 
 const iconMap: Record<string, React.ReactNode> = {
   Cpu: <Cpu className="w-5 h-5" />,
@@ -29,7 +28,21 @@ function getStatusColor(status: string) {
   return "#22c55e";
 }
 
-function VitalCard({ dimension, index }: { dimension: Dimension; index: number }) {
+interface DimensionData {
+  id: string;
+  name: string;
+  shortName: string;
+  score: number;
+  previousScore: number;
+  delta: number;
+  status: string;
+  signals: { day: number; date: string; value: number }[];
+  icon: string;
+  description: string;
+  unit: string;
+}
+
+function VitalCard({ dimension, index }: { dimension: DimensionData; index: number }) {
   const color = getStatusColor(dimension.status);
   const [displayScore, setDisplayScore] = useState(0);
 
@@ -140,6 +153,9 @@ function VitalCard({ dimension, index }: { dimension: Dimension; index: number }
 }
 
 export default function VitalSigns() {
+  const { report } = useReport();
+  const dimensions = report?.dimensions ?? [];
+
   return (
     <section className="py-12">
       <div className="max-w-[1400px] mx-auto px-6">
@@ -162,7 +178,7 @@ export default function VitalSigns() {
 
         {/* Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          {dimensions.map((dim, i) => (
+          {dimensions.map((dim: DimensionData, i: number) => (
             <VitalCard key={dim.id} dimension={dim} index={i} />
           ))}
         </div>

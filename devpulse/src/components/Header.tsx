@@ -1,9 +1,12 @@
 "use client";
 
 import { Activity, GitBranch, Clock, Users } from "lucide-react";
-import { repoInfo } from "@/lib/demoData";
+import { useReport } from "@/lib/ReportContext";
 
 export default function Header() {
+  const { report } = useReport();
+  const repoInfo = report?.repoInfo ?? { name: "Unknown", branch: "main", contributors: 0, scanDuration: "N/A" };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">

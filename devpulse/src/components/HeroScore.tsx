@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Activity, AlertTriangle, TrendingDown, Clock } from "lucide-react";
-import { overallScore, previousOverallScore, repoInfo, devHoursWasted } from "@/lib/demoData";
+import { useReport } from "@/lib/ReportContext";
 
 function getScoreColor(score: number) {
   if (score >= 70) return { color: "#22c55e", label: "Healthy", glow: "glow-green" };
@@ -12,6 +12,14 @@ function getScoreColor(score: number) {
 }
 
 export default function HeroScore() {
+  const { report } = useReport();
+  const overallScore = report?.overallScore ?? 0;
+  const previousOverallScore = report?.previousOverallScore ?? 0;
+  const repoInfo = report?.repoInfo ?? { name: "Unknown", branch: "main", contributors: 0, scanDuration: "N/A", totalCommits: 0 };
+  const devHoursWasted = typeof report?.devHoursWasted === "object" ? report.devHoursWasted?.total ?? 0 : report?.devHoursWasted ?? 0;
+  const anomalyCount = report?.anomalyEvents?.length ?? 0;
+  const patchCount = report?.ghostPatches?.length ?? 0;
+
   const [displayScore, setDisplayScore] = useState(0);
   const { color, label, glow } = getScoreColor(overallScore);
   const delta = overallScore - previousOverallScore;
@@ -27,7 +35,7 @@ export default function HeroScore() {
       if (frame >= totalFrames) clearInterval(interval);
     }, 25);
     return () => clearInterval(interval);
-  }, []);
+  }, [overallScore]);
 
   return (
     <section className="relative pt-28 pb-16 overflow-hidden">
@@ -138,28 +146,28 @@ export default function HeroScore() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <StatCard
                 icon={<AlertTriangle className="w-4 h-4 text-critical" />}
-                value={`${devHoursWasted.total}`}
+                value={`${devHoursWasted}`}
                 unit="dev-hrs/mo"
                 label="Wasted"
                 accent="#ef4444"
               />
               <StatCard
                 icon={<TrendingDown className="w-4 h-4 text-warning" />}
-                value="3"
+                value={`${anomalyCount}`}
                 unit="anomalies"
                 label="Detected"
                 accent="#f59e0b"
               />
               <StatCard
                 icon={<Activity className="w-4 h-4 text-accent-cyan" />}
-                value="5"
+                value={`${report?.dimensions?.length ?? 5}`}
                 unit="dimensions"
                 label="Scanned"
                 accent="#00d4ff"
               />
               <StatCard
                 icon={<Clock className="w-4 h-4 text-ecg-green" />}
-                value="5"
+                value={`${patchCount}`}
                 unit="fixes"
                 label="Generated"
                 accent="#00ff41"

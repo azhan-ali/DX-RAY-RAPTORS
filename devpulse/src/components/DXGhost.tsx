@@ -2,11 +2,33 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ghostPatches } from "@/lib/demoData";
+import { useReport } from "@/lib/ReportContext";
 import { FileCode, ChevronDown, ChevronUp, Zap, Check } from "lucide-react";
 
+function parseDiffToLines(diff: string): { type: "add" | "remove" | "neutral"; content: string }[] {
+  if (!diff) return [];
+  return diff.split("\n").map((line) => {
+    if (line.startsWith("+")) return { type: "add" as const, content: line.slice(1) };
+    if (line.startsWith("-")) return { type: "remove" as const, content: line.slice(1) };
+    return { type: "neutral" as const, content: line };
+  });
+}
+
 export default function DXGhost() {
+  const { report } = useReport();
+  const rawPatches = report?.ghostPatches ?? [];
   const [expandedPatch, setExpandedPatch] = useState<number>(0);
+
+  // Normalize patches: handle both API format (diff string) and demo format (lines array)
+  const ghostPatches = rawPatches.map((p: any, i: number) => ({
+    file: p.file ?? "unknown",
+    description: p.title ?? p.description ?? "",
+    estimatedSaving: p.impact ?? p.estimatedSaving ?? "N/A",
+    confidence: p.confidence ?? 0,
+    patchType: p.patchType ?? null,
+    simulatedOutcome: p.simulatedOutcome ?? null,
+    lines: p.lines ?? parseDiffToLines(p.diff ?? ""),
+  }));
 
   return (
     <section className="py-12">
@@ -39,7 +61,7 @@ export default function DXGhost() {
             <Zap className="w-5 h-5 text-ecg-green flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm text-foreground font-medium mb-1">
-                DX Ghost analyzed your repository and generated ready-to-apply patches
+                DX Ghost analyzed your repository and generated {ghostPatches.length} ready-to-apply patches
               </p>
               <p className="text-xs text-muted-light">
                 Each patch targets a specific bottleneck with estimated impact. Review the diffs below and apply with{" "}
@@ -116,7 +138,7 @@ export default function DXGhost() {
 
                       {/* Diff lines */}
                       <div className="bg-[#080c14] px-0 py-2 font-mono text-xs overflow-x-auto">
-                        {patch.lines.map((line, lineIndex) => (
+                        {patch.lines.map((line: { type: string; content: string }, lineIndex: number) => (
                           <div
                             key={lineIndex}
                             className={`flex items-center px-4 py-0.5 ${
@@ -158,15 +180,21 @@ export default function DXGhost() {
                       <div className="flex items-center justify-between px-4 py-3 bg-[#080c14] border-t border-border/50">
                         <div className="flex items-center gap-4 text-[10px] font-mono text-muted">
                           <span className="text-ecg-green">
-                            +{patch.lines.filter((l) => l.type === "add").length} additions
+                            +{patch.lines.filter((l: { type: string }) => l.type === "add").length} additions
                           </span>
                           <span className="text-critical">
-                            -{patch.lines.filter((l) => l.type === "remove").length} deletions
+                            -{patch.lines.filter((l: { type: string }) => l.type === "remove").length} deletions
                           </span>
                         </div>
-                        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ecg-green/10 border border-ecg-green/30 text-ecg-green text-xs font-mono font-semibold hover:bg-ecg-green/20 transition-colors">
+                        <button
+                          onClick={() => {
+                            const diffText = patch.lines.map((l: any) => (l.type === 'add' ? '+' : l.type === 'remove' ? '-' : ' ') + l.content).join('\n');
+                            navigator.clipboard.writeText(diffText);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ecg-green/10 border border-ecg-green/30 text-ecg-green text-xs font-mono font-semibold hover:bg-ecg-green/20 transition-colors"
+                        >
                           <Check className="w-3 h-3" />
-                          Apply Patch
+                          Copy Patch
                         </button>
                       </div>
                     </div>

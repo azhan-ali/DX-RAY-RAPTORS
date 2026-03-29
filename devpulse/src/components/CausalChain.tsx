@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { causalLinks, dimensions } from "@/lib/demoData";
+import { useReport } from "@/lib/ReportContext";
 
 function getStatusColor(status: string) {
   if (status === "critical") return "#ef4444";
@@ -11,13 +11,22 @@ function getStatusColor(status: string) {
 
 const nodePositions: Record<string, { x: number; y: number }> = {
   "test-stability": { x: 80, y: 80 },
+  "test_stability": { x: 80, y: 80 },
   "ci-build": { x: 320, y: 80 },
+  "ci_build": { x: 320, y: 80 },
   "commit-velocity": { x: 560, y: 80 },
+  "commit_velocity": { x: 560, y: 80 },
   "review-lag": { x: 320, y: 250 },
+  "code_review": { x: 320, y: 250 },
   "doc-freshness": { x: 560, y: 250 },
+  "doc_freshness": { x: 560, y: 250 },
 };
 
 export default function CausalChain() {
+  const { report } = useReport();
+  const causalLinks = report?.causalLinks ?? [];
+  const dimensions = report?.dimensions ?? [];
+
   return (
     <section className="py-12">
       <div className="max-w-[1400px] mx-auto px-6">
@@ -73,7 +82,7 @@ export default function CausalChain() {
               <rect width="660" height="340" fill="url(#causal-grid)" opacity="0.3" />
 
               {/* Connection lines */}
-              {causalLinks.map((link, i) => {
+              {causalLinks.map((link: any, i: number) => {
                 const from = nodePositions[link.from];
                 const to = nodePositions[link.to];
                 if (!from || !to) return null;
@@ -144,7 +153,7 @@ export default function CausalChain() {
               })}
 
               {/* Nodes */}
-              {dimensions.map((dim, i) => {
+              {dimensions.map((dim: any, i: number) => {
                 const pos = nodePositions[dim.id];
                 if (!pos) return null;
                 const color = getStatusColor(dim.status);
@@ -224,7 +233,7 @@ export default function CausalChain() {
             <h3 className="text-sm font-mono text-muted uppercase tracking-wider mb-4">
               Detected Causal Chains
             </h3>
-            {causalLinks.map((link, i) => (
+            {causalLinks.map((link: any, i: number) => (
               <div
                 key={i}
                 className="p-4 rounded-xl bg-surface border border-border card-hover"

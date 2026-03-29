@@ -11,7 +11,7 @@ import {
   ReferenceLine,
   CartesianGrid,
 } from "recharts";
-import { forecastData, devHoursWasted } from "@/lib/demoData";
+import { useReport } from "@/lib/ReportContext";
 
 interface ForecastTooltipProps {
   active?: boolean;
@@ -38,6 +38,27 @@ function ForecastTooltip({ active, payload, label }: ForecastTooltipProps) {
 }
 
 export default function TimeMachine() {
+  const { report } = useReport();
+  const forecastData = report?.forecast ?? [];
+  const devHoursWasted = typeof report?.devHoursWasted === "object"
+    ? report.devHoursWasted
+    : { total: report?.devHoursWasted ?? 0, breakdown: [] };
+
+  // Build breakdown from devHoursBreakdown if available
+  const breakdown = report?.devHoursBreakdown?.length
+    ? report.devHoursBreakdown.map((item: any) => ({
+        dimension: item.dimension,
+        hours: item.totalHours,
+        percentage: devHoursWasted.total > 0 ? Math.round((item.totalHours / (typeof devHoursWasted.total === 'number' ? devHoursWasted.total : report?.devHoursWasted ?? 1)) * 100) : 0,
+      }))
+    : devHoursWasted.breakdown ?? [];
+  const totalHours = typeof devHoursWasted === "object" ? devHoursWasted.total : devHoursWasted;
+
+  // Get fix/doNothing end values for Two Futures panel
+  const lastForecast = forecastData.length > 0 ? forecastData[forecastData.length - 1] : null;
+  const fixNowScore = lastForecast?.fixNow ?? 67;
+  const doNothingScore = lastForecast?.doNothing ?? 28;
+
   return (
     <section className="py-12">
       <div className="max-w-[1400px] mx-auto px-6">
@@ -90,7 +111,7 @@ export default function TimeMachine() {
 
             <div className="p-6 h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={forecastData}>
+                <AreaChart data={forecastData} key={JSON.stringify(forecastData.slice(0, 2))}>
                   <defs>
                     <linearGradient id="forecast-fix" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#22c55e" stopOpacity={0.2} />
@@ -183,7 +204,7 @@ export default function TimeMachine() {
                   <p className="text-xs font-mono text-healthy uppercase tracking-wider mb-1">
                     If you fix now
                   </p>
-                  <p className="text-3xl font-bold font-mono text-healthy">67</p>
+                  <p className="text-3xl font-bold font-mono text-healthy">{fixNowScore}</p>
                   <p className="text-xs text-muted mt-1">DX Score in 30 days</p>
                 </div>
 
@@ -191,7 +212,7 @@ export default function TimeMachine() {
                   <p className="text-xs font-mono text-critical uppercase tracking-wider mb-1">
                     If you do nothing
                   </p>
-                  <p className="text-3xl font-bold font-mono text-critical">28</p>
+                  <p className="text-3xl font-bold font-mono text-critical">{doNothingScore}</p>
                   <p className="text-xs text-muted mt-1">DX Score in 30 days</p>
                 </div>
               </div>
@@ -203,7 +224,7 @@ export default function TimeMachine() {
                 Cost of Inaction
               </h3>
               <div className="space-y-3">
-                {devHoursWasted.breakdown.map((item, i) => (
+                {breakdown.map((item: any, i: number) => (
                   <div key={i}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs text-muted-light">{item.dimension}</span>
@@ -225,7 +246,7 @@ export default function TimeMachine() {
                 <div className="pt-3 mt-3 border-t border-border/50 flex items-center justify-between">
                   <span className="text-sm font-semibold text-foreground">Total Wasted</span>
                   <span className="text-xl font-bold font-mono text-critical">
-                    {devHoursWasted.total} hrs/mo
+                    {totalHours} hrs/mo
                   </span>
                 </div>
               </div>

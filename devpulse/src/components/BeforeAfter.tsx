@@ -2,43 +2,36 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, TrendingUp, Clock, Shield, Zap } from "lucide-react";
+import { useReport } from "@/lib/ReportContext";
 
-const comparisons = [
-  {
-    metric: "Build Time",
-    before: "18.4 min",
-    after: "6.1 min",
-    improvement: "-67%",
-    icon: <Clock className="w-4 h-4" />,
-    color: "#00ff41",
-  },
-  {
-    metric: "Flaky Failures",
-    before: "23/week",
-    after: "0/week",
-    improvement: "-100%",
-    icon: <Shield className="w-4 h-4" />,
-    color: "#00d4ff",
-  },
-  {
-    metric: "DX Score",
-    before: "41",
-    after: "67",
-    improvement: "+63%",
-    icon: <TrendingUp className="w-4 h-4" />,
-    color: "#22c55e",
-  },
-  {
-    metric: "Time-to-Review",
-    before: "26 hrs",
-    after: "8 hrs",
-    improvement: "-69%",
-    icon: <Zap className="w-4 h-4" />,
-    color: "#a855f7",
-  },
-];
+const iconMap: Record<string, React.ReactNode> = {
+  TrendingUp: <TrendingUp className="w-4 h-4" />,
+  Clock: <Clock className="w-4 h-4" />,
+  FlaskConical: <Shield className="w-4 h-4" />,
+  Zap: <Zap className="w-4 h-4" />,
+};
+
+const colorMap: Record<string, string> = {
+  "#22c55e": "#22c55e",
+  "#00d4ff": "#00d4ff",
+  "#a855f7": "#a855f7",
+  "#ef4444": "#ef4444",
+};
 
 export default function BeforeAfter() {
+  const { report } = useReport();
+  const beforeAfter = report?.beforeAfter ?? [];
+  const devHoursWasted = typeof report?.devHoursWasted === "object" ? report.devHoursWasted?.total ?? 0 : report?.devHoursWasted ?? 0;
+
+  const comparisons = beforeAfter.map((item: any) => ({
+    metric: item.label,
+    before: item.before,
+    after: item.after,
+    improvement: item.improvement,
+    icon: iconMap[item.icon] ?? <TrendingUp className="w-4 h-4" />,
+    color: colorMap[item.color] ?? item.color ?? "#22c55e",
+  }));
+
   return (
     <section className="py-12">
       <div className="max-w-[1400px] mx-auto px-6">
@@ -168,9 +161,9 @@ export default function BeforeAfter() {
             Combined impact of applying DevPulse recommendations:
           </p>
           <p className="text-lg font-semibold text-foreground">
-            <span className="text-ecg-green font-mono text-glow-green">14.3 dev-hours/month</span>{" "}
+            <span className="text-ecg-green font-mono text-glow-green">{devHoursWasted} dev-hours/month</span>{" "}
             recovered — equivalent to{" "}
-            <span className="text-accent-cyan font-mono text-glow-cyan">$4,290/month</span>{" "}
+            <span className="text-accent-cyan font-mono text-glow-cyan">${Math.round(devHoursWasted * 300).toLocaleString()}/month</span>{" "}
             at average engineer cost
           </p>
         </motion.div>

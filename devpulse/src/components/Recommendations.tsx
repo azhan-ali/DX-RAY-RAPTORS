@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { recommendations, anomalyEvents } from "@/lib/demoData";
+import { useReport } from "@/lib/ReportContext";
 import { Clock, AlertTriangle, ArrowRight, Zap, Info, AlertCircle } from "lucide-react";
 
 function getSeverityConfig(severity: string) {
@@ -19,6 +19,11 @@ function getEffortBadge(effort: string) {
 }
 
 export default function Recommendations() {
+  const { report } = useReport();
+  const recommendations = report?.recommendations ?? [];
+  const anomalyEvents = report?.anomalyEvents ?? [];
+  const devHoursWasted = typeof report?.devHoursWasted === "object" ? report.devHoursWasted?.total ?? 0 : report?.devHoursWasted ?? 0;
+
   return (
     <section className="py-12">
       <div className="max-w-[1400px] mx-auto px-6">
@@ -42,9 +47,9 @@ export default function Recommendations() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recommendations List */}
           <div className="lg:col-span-2 space-y-3">
-            {recommendations.map((rec, index) => {
-              const severity = getSeverityConfig(rec.severity);
-              const effort = getEffortBadge(rec.effort);
+            {recommendations.map((rec: any, index: number) => {
+              const severity = getSeverityConfig(rec.severity ?? rec.impact ?? "info");
+              const effort = getEffortBadge(rec.effort ?? "medium");
 
               return (
                 <motion.div
@@ -114,7 +119,7 @@ export default function Recommendations() {
                 {/* Timeline line */}
                 <div className="absolute left-[11px] top-2 bottom-2 w-px bg-border" />
 
-                {anomalyEvents.map((event, i) => (
+                {anomalyEvents.map((event: any, i: number) => (
                   <div key={i} className="relative flex gap-3 pb-5 last:pb-0">
                     {/* Dot */}
                     <div className="relative z-10 flex-shrink-0 mt-1">
@@ -151,11 +156,11 @@ export default function Recommendations() {
                 Total Monthly Impact
               </p>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold font-mono text-critical text-glow-red">14.3</span>
+                <span className="text-4xl font-bold font-mono text-critical text-glow-red">{devHoursWasted}</span>
                 <span className="text-sm text-muted-light">dev-hours wasted per month</span>
               </div>
               <p className="text-xs text-muted mt-2">
-                Equivalent to <span className="text-foreground font-medium">1.8 full developer-days</span> lost
+                Equivalent to <span className="text-foreground font-medium">{(devHoursWasted / 8).toFixed(1)} full developer-days</span> lost
                 every month on preventable issues.
               </p>
             </div>

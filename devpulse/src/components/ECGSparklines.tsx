@@ -10,8 +10,7 @@ import {
   Tooltip,
   ReferenceLine,
 } from "recharts";
-import { dimensions } from "@/lib/demoData";
-import { anomalyEvents } from "@/lib/demoData";
+import { useReport } from "@/lib/ReportContext";
 
 function getStatusColor(status: string) {
   if (status === "critical") return "#ef4444";
@@ -40,6 +39,10 @@ function CustomTooltip({ active, payload, color, name }: CustomTooltipProps) {
 }
 
 export default function ECGSparklines() {
+  const { report } = useReport();
+  const dimensions = report?.dimensions ?? [];
+  const anomalyEvents = report?.anomalyEvents ?? [];
+
   return (
     <section className="py-12">
       <div className="max-w-[1400px] mx-auto px-6">
@@ -91,9 +94,9 @@ export default function ECGSparklines() {
 
           {/* ECG Rows */}
           <div className="divide-y divide-border/50">
-            {dimensions.map((dim, index) => {
+            {dimensions.map((dim: any, index: number) => {
               const color = getStatusColor(dim.status);
-              const anomaly = anomalyEvents.find((a) => a.dimension === dim.id);
+              const anomaly = anomalyEvents.find((a: any) => a.dimension === dim.id || a.dimension === dim.shortName);
 
               return (
                 <motion.div
