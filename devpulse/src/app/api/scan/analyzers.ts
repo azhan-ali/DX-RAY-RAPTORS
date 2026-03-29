@@ -224,9 +224,33 @@ function detectAnomalies(dims: DimensionResult[]): AnomalyEvent[] {
   return anomalies.sort((a, b) => ({ critical: 0, warning: 1, info: 2 }[a.severity] ?? 2) - ({ critical: 0, warning: 1, info: 2 }[b.severity] ?? 2));
 }
 
-// ─── Ghost Patches ──────────────────────────────────────────────────────────
+// ─── Gemini AI ──────────────────────────────────────────────────────────────
 
-function generateGhostPatches(dims: DimensionResult[], tree: GHTreeItem[], ci: Record<string, unknown>, test: Record<string, unknown>): GhostPatch[] {
+async function callGemini(prompt: string): Promise<string | null> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
+        }),
+      }
+    );
+    if (!res.ok) { console.error(`[DX Ghost] Gemini API error: ${res.status}`); return null; }
+    const data = await res.json();
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+  } catch (err) {
+    console.error("[DX Ghost] Gemini call failed:", err);
+    return null;
+  }
+}
+
+function fallbackPatches(dims: DimensionResult[], tree: GHTreeItem[], ci: Record<string, unknown>, test: Record<string, unknown>): GhostPatch[] {
   const patches: GhostPatch[] = []; let id = 1;
   const sorted = [...dims].sort((a, b) => a.score - b.score);
   for (const d of sorted.slice(0, 5)) {
@@ -237,6 +261,67 @@ function generateGhostPatches(dims: DimensionResult[], tree: GHTreeItem[], ci: R
     if (d.id === "doc_freshness" && !(tree.some(f => /^readme/i.test(f.path)))) patches.push({ id: id++, title: "Add project README", file: "README.md", language: "markdown", diff: "+# Project\n+\n+> Description\n+\n+## Quick Start\n+```bash\n+npm install && npm start\n+```\n+\n+## License\n+MIT", impact: "Reduce onboarding ~60%", confidence: 95, patchType: "documentation" });
   }
   return patches.slice(0, 5);
+}
+
+// ─── Ghost Patches (AI-Powered + Fallback) ──────────────────────────────────
+
+async function generateGhostPatches(dims: DimensionResult[], tree: GHTreeItem[], ci: Record<string, unknown>, test: Record<string, unknown>, repoName: string, lang: string | null): Promise<GhostPatch[]> {
+  // Build context for Gemini
+  const weakDims = [...dims].sort((a, b) => a.score - b.score).filter(d => d.score < 80).slice(0, 4);
+  if (weakDims.length === 0) return fallbackPatches(dims, tree, ci, test);
+
+  const hasCI = ci.hasCI as boolean;
+  const hasTests = test.hasTests as boolean;
+  const testCount = test.testFileCount as number;
+  const ciFiles = tree.filter(f => f.path.startsWith(".github/workflows/")).map(f => f.path);
+  const srcFiles = tree.filter(f => f.type === "blob").slice(0, 30).map(f => f.path);
+
+  const prompt = `You are DX Ghost, an AI that generates targeted code patches to improve developer experience.
+
+Repository: ${repoName}
+Primary Language: ${lang ?? "unknown"}
+CI Config Files: ${ciFiles.length > 0 ? ciFiles.join(", ") : "None detected"}
+Has CI: ${hasCI}, Has Tests: ${hasTests} (${testCount} test files)
+Sample files: ${srcFiles.slice(0, 15).join(", ")}
+
+Weak dimensions (sorted worst-first):
+${weakDims.map(d => `- ${d.name}: ${d.score}/100 (${d.status})`).join("\n")}
+
+Generate exactly ${Math.min(weakDims.length, 4)} code patches as a JSON array. Each patch must fix a specific weak dimension.
+Each patch object must have:
+- "title": short descriptive title
+- "file": target filename (real path like .github/workflows/ci.yml or src/...)
+- "language": file language (yaml, javascript, typescript, python, markdown, text)
+- "diff": unified diff string where added lines start with + and removed lines start with - (no headers, just code lines)
+- "impact": estimated impact string like "Save ~X dev-hrs/month" or "Reduce Y by Z%"
+- "confidence": number 70-95
+- "patchType": one of ci_optimization, test_setup, review_process, documentation, velocity_boost
+
+Respond with ONLY the JSON array, no markdown fences, no explanation.`;
+
+  const raw = await callGemini(prompt);
+  if (!raw) return fallbackPatches(dims, tree, ci, test);
+
+  try {
+    // Extract JSON array from response (handle potential markdown fences)
+    const jsonStr = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const parsed = JSON.parse(jsonStr);
+    if (!Array.isArray(parsed) || parsed.length === 0) return fallbackPatches(dims, tree, ci, test);
+
+    return parsed.slice(0, 5).map((p: Record<string, unknown>, i: number) => ({
+      id: i + 1,
+      title: String(p.title ?? "AI Fix"),
+      file: String(p.file ?? "unknown"),
+      language: String(p.language ?? "text"),
+      diff: String(p.diff ?? "+// AI-generated patch"),
+      impact: String(p.impact ?? "Improve DX"),
+      confidence: typeof p.confidence === "number" ? p.confidence : 80,
+      patchType: String(p.patchType ?? "ci_optimization"),
+    }));
+  } catch (err) {
+    console.error("[DX Ghost] Failed to parse Gemini response:", err);
+    return fallbackPatches(dims, tree, ci, test);
+  }
 }
 
 // ─── Before/After & Dev Hours ───────────────────────────────────────────────
@@ -304,7 +389,7 @@ export async function analyzeRepository(repoUrl: string): Promise<ScanReport> {
     repoInfo: { name: data.repoInfo.full_name, branch: data.repoInfo.default_branch, contributors: data.contributors.length, lastCommit: data.commits[0]?.commit.author.date ?? "unknown", scanDuration: scanDur, totalCommits: data.commits.length },
     overallScore: overall, previousOverallScore: prevOverall, dimensions,
     causalLinks: computeCorrelations(dimensions), forecast: generateForecast(overall, dimensions),
-    ghostPatches: generateGhostPatches(dimensions, data.tree, ciR.details, testR.details),
+    ghostPatches: await generateGhostPatches(dimensions, data.tree, ciR.details, testR.details, data.repoInfo.full_name, data.repoInfo.language),
     recommendations: recs, anomalyEvents: detectAnomalies(dimensions),
     beforeAfter: generateBeforeAfter(dimensions, recs),
     devHoursWasted: devHrs, devHoursBreakdown: breakdown,
