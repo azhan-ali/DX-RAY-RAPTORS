@@ -1,17 +1,24 @@
 "use client";
 
-import { Activity, GitBranch, Clock, Users } from "lucide-react";
+import { Activity, GitBranch, Clock, Users, ArrowLeft } from "lucide-react";
 import { useReport } from "@/lib/ReportContext";
 
 export default function Header() {
-  const { report } = useReport();
+  const { report, reset } = useReport();
   const repoInfo = report?.repoInfo ?? { name: "Unknown", branch: "main", contributors: 0, scanDuration: "N/A" };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
-        {/* Logo */}
+        {/* Back + Logo */}
         <div className="flex items-center gap-3">
+          <button
+            onClick={reset}
+            className="flex items-center justify-center w-8 h-8 rounded-lg bg-surface border border-border hover:border-ecg-green/30 hover:bg-ecg-green/5 transition-all group"
+            title="Back to scan"
+          >
+            <ArrowLeft className="w-4 h-4 text-muted group-hover:text-ecg-green transition-colors" />
+          </button>
           <div className="relative flex items-center justify-center w-9 h-9 rounded-lg bg-ecg-green/10 border border-ecg-green/20">
             <Activity className="w-5 h-5 text-ecg-green" />
             <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-ecg-green animate-pulse-glow" />

@@ -33,6 +33,7 @@ interface ReportContextValue {
   isDemo: boolean;
   startScan: (repoPath: string) => Promise<void>;
   loadDemo: () => void;
+  reset: () => void;
 }
 
 const ReportContext = createContext<ReportContextValue | null>(null);
@@ -67,6 +68,13 @@ export function ReportProvider({ children }: { children: ReactNode }) {
   const [scanState, setScanState] = useState<ScanState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
+
+  const reset = useCallback(() => {
+    setReport(null);
+    setScanState("idle");
+    setError(null);
+    setIsDemo(false);
+  }, []);
 
   const loadDemo = useCallback(() => {
     setReport(buildDemoReport());
@@ -107,7 +115,7 @@ export function ReportProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <ReportContext.Provider value={{ report, scanState, error, isDemo, startScan, loadDemo }}>
+    <ReportContext.Provider value={{ report, scanState, error, isDemo, startScan, loadDemo, reset }}>
       {children}
     </ReportContext.Provider>
   );
