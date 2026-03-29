@@ -83,7 +83,7 @@ export default function ECGSparklines() {
                 DEVPULSE ECG MONITOR v1.0
               </span>
             </div>
-            <div className="flex items-center gap-2 text-[10px] font-mono text-muted">
+            <div className="hidden sm:flex items-center gap-2 text-[10px] font-mono text-muted">
               <span className="text-ecg-green">LIVE</span>
               <span>•</span>
               <span>28-DAY WINDOW</span>
@@ -108,7 +108,7 @@ export default function ECGSparklines() {
                   className="flex items-stretch"
                 >
                   {/* Channel label */}
-                  <div className="flex-shrink-0 w-44 p-4 border-r border-border/50 flex flex-col justify-center">
+                  <div className="flex-shrink-0 w-24 sm:w-44 p-2 sm:p-4 border-r border-border/50 flex flex-col justify-center">
                     <div className="flex items-center gap-2 mb-1">
                       <span
                         className="w-2 h-2 rounded-full"
@@ -129,7 +129,7 @@ export default function ECGSparklines() {
                   </div>
 
                   {/* Sparkline */}
-                  <div className="flex-1 h-24 p-2">
+                  <div className="flex-1 h-20 sm:h-24 p-1 sm:p-2">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={dim.signals}>
                         <defs>

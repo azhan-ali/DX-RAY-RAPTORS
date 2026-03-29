@@ -89,11 +89,11 @@ export default function TimeMachine() {
             className="lg:col-span-2 rounded-2xl bg-surface border border-border overflow-hidden"
           >
             {/* Chart Header */}
-            <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-surface-light">
-              <span className="text-xs font-mono text-muted uppercase tracking-wider">
+            <div className="flex items-center justify-between px-3 sm:px-6 py-3 border-b border-border bg-surface-light">
+              <span className="text-[10px] sm:text-xs font-mono text-muted uppercase tracking-wider">
                 30-Day DX Score Forecast
               </span>
-              <div className="flex items-center gap-4 text-[10px] font-mono">
+              <div className="hidden sm:flex items-center gap-4 text-[10px] font-mono">
                 <div className="flex items-center gap-1.5">
                   <span className="w-3 h-0.5 bg-ecg-green rounded" />
                   <span className="text-healthy">Fix Now</span>
@@ -109,7 +109,7 @@ export default function TimeMachine() {
               </div>
             </div>
 
-            <div className="p-6 h-80">
+            <div className="p-2 sm:p-6 h-64 sm:h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={forecastData} key={JSON.stringify(forecastData.slice(0, 2))}>
                   <defs>

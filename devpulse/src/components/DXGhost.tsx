@@ -87,17 +87,17 @@ export default function DXGhost() {
               {/* Patch Header */}
               <button
                 onClick={() => setExpandedPatch(expandedPatch === index ? -1 : index)}
-                className="w-full flex items-center justify-between px-6 py-4 hover:bg-surface-light transition-colors"
+                className="w-full flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 hover:bg-surface-light transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-ecg-green/10 border border-ecg-green/20">
                     <FileCode className="w-4 h-4 text-ecg-green" />
                   </div>
                   <div className="text-left">
-                    <p className="text-sm font-semibold text-foreground">
+                    <p className="text-sm font-semibold text-foreground truncate max-w-[150px] sm:max-w-none">
                       {patch.file}
                     </p>
-                    <p className="text-xs text-muted-light">{patch.description}</p>
+                    <p className="text-xs text-muted-light truncate max-w-[150px] sm:max-w-none">{patch.description}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

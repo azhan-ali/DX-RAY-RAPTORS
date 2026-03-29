@@ -284,7 +284,7 @@ function ScanLanding() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
-          className="grid grid-cols-4 gap-2 mb-5 w-full max-w-2xl"
+          className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5 w-full max-w-2xl"
         >
           {features.map((f, i) => (
             <motion.div

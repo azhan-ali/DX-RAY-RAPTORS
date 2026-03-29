@@ -62,7 +62,7 @@ export default function CausalChain() {
               </span>
             </div>
 
-            <svg viewBox="0 0 660 340" className="w-full h-auto mt-4">
+            <svg viewBox="0 0 660 340" className="w-full h-auto mt-4 min-w-0">
               {/* Grid background */}
               <defs>
                 <pattern id="causal-grid" width="20" height="20" patternUnits="userSpaceOnUse">

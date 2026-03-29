@@ -1,9 +1,12 @@
 "use client";
 
 import { Activity } from "lucide-react";
-import { repoInfo } from "@/lib/demoData";
+import { useReport } from "@/lib/ReportContext";
 
 export default function Footer() {
+  const { report } = useReport();
+  const repoInfo = report?.repoInfo ?? { name: "Unknown", scanDate: new Date().toISOString().split("T")[0], scanDuration: "N/A", totalCommits: 0 };
+
   return (
     <footer className="border-t border-border bg-surface/50 mt-12">
       <div className="max-w-[1400px] mx-auto px-6 py-8">
