@@ -9,6 +9,7 @@ import json
 import subprocess
 import sys
 import os
+import math
 from datetime import datetime, timedelta
 
 
@@ -41,18 +42,47 @@ def classify_status(score):
     return "critical"
 
 
-def detect_anomalies(signals, dimension_name, threshold=25):
-    """Detect anomaly events from signal data (sudden drops)."""
-    anomalies = []
+def detect_anomalies(signals, dimension_name, z_threshold=2.0):
+    """
+    Detect anomaly events using Z-score statistical method.
+    Computes mean and std of day-over-day changes, then flags
+    any change whose Z-score exceeds the threshold.
+    Also identifies the exact date the metric first degraded.
+    """
+    if len(signals) < 3:
+        return []
+
+    # Compute day-over-day deltas
+    deltas = []
     for i in range(1, len(signals)):
-        drop = signals[i - 1]["value"] - signals[i]["value"]
-        if drop >= threshold:
+        deltas.append(signals[i]["value"] - signals[i - 1]["value"])
+
+    # Mean and standard deviation of deltas
+    n = len(deltas)
+    mean_delta = sum(deltas) / n
+    variance = sum((d - mean_delta) ** 2 for d in deltas) / n
+    std_delta = math.sqrt(variance) if variance > 0 else 1.0  # avoid div-by-zero
+
+    anomalies = []
+    for i, delta in enumerate(deltas):
+        # Z-score: how many std devs this delta is from the mean
+        z_score = (delta - mean_delta) / std_delta
+
+        # We care about negative spikes (drops), so z_score will be very negative
+        if z_score < -z_threshold:
+            actual_drop = abs(delta)
+            severity = "critical" if z_score < -(z_threshold + 1.5) else "warning"
+
             anomalies.append({
-                "date": signals[i]["date"],
+                "date": signals[i + 1]["date"],
                 "dimension": dimension_name,
-                "description": f"{dimension_name} dropped {drop} points in one day",
-                "severity": "critical" if drop >= 35 else "warning",
+                "description": f"{dimension_name} anomaly detected: dropped {actual_drop} pts (Z={z_score:.1f}σ)",
+                "severity": severity,
+                "zScore": round(z_score, 2),
+                "drop": round(actual_drop, 1),
+                "method": "z-score",
             })
+
     return anomalies
 
 

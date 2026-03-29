@@ -314,25 +314,38 @@ export const ghostPatches: GhostPatch[] = [
 export const anomalyEvents = [
   {
     date: "Mar 8",
-    dimension: "ci-build",
-    description: "CI build time spiked from 12 min to 24 min",
-    commitRange: "a3f21c8...b7e49d1",
-    zScore: 3.2,
+    dimension: "CI/Build",
+    description: "CI/Build anomaly detected: dropped 12 pts (Z=-3.2σ)",
+    severity: "critical",
+    zScore: -3.2,
+    drop: 12,
+    method: "z-score",
   },
   {
     date: "Mar 15",
-    dimension: "test-stability",
-    description: "Flaky test rate jumped from 8% to 31%",
-    commitRange: "c4d89e2...d1a73f5",
-    zScore: 2.8,
+    dimension: "Tests",
+    description: "Tests anomaly detected: dropped 23 pts (Z=-2.8σ)",
+    severity: "critical",
+    zScore: -2.8,
+    drop: 23,
+    method: "z-score",
   },
   {
     date: "Mar 22",
-    dimension: "review-lag",
-    description: "Average review time exceeded 48 hours",
-    commitRange: "e5f12a9...f8b34c7",
-    zScore: 2.4,
+    dimension: "Reviews",
+    description: "Reviews anomaly detected: dropped 8 pts (Z=-2.4σ)",
+    severity: "warning",
+    zScore: -2.4,
+    drop: 8,
+    method: "z-score",
   },
+];
+
+export const rootCauseSummary = [
+  { id: "race_condition", label: "Race Condition", icon: "Zap", color: "#ef4444", score: 18, percentage: 39 },
+  { id: "env_pollution", label: "Env Pollution", icon: "Globe", color: "#a855f7", score: 14, percentage: 30 },
+  { id: "order_dependency", label: "Order Dependency", icon: "ArrowDownUp", color: "#f59e0b", score: 9, percentage: 20 },
+  { id: "true_flaky", label: "True Flaky", icon: "Shuffle", color: "#00d4ff", score: 5, percentage: 11 },
 ];
 
 export const devHoursWasted = {

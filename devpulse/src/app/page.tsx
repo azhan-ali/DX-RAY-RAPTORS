@@ -13,6 +13,7 @@ import TimeMachine from "@/components/TimeMachine";
 import DXGhost from "@/components/DXGhost";
 import Recommendations from "@/components/Recommendations";
 import BeforeAfter from "@/components/BeforeAfter";
+import FlakyRootCause from "@/components/FlakyRootCause";
 import Footer from "@/components/Footer";
 
 /* ──────────────────────────────────────────────────────
@@ -540,6 +541,7 @@ function Dashboard() {
           <HeroScore />
           <VitalSigns />
           <ECGSparklines />
+          <FlakyRootCause />
           <CausalChain />
           <TimeMachine />
           <DXGhost />
