@@ -167,8 +167,8 @@ def compute_correlations(repo_path):
                 desc = generate_description(from_id, to_id, lag, r)
 
                 causal_links.append({
-                    "from": dim_map[from_id]["shortName"],
-                    "to": dim_map[to_id]["shortName"],
+                    "from": from_id,
+                    "to": to_id,
                     "lag": lag,
                     "correlation": r,
                     "description": desc,

@@ -253,15 +253,16 @@ export default function CausalChain() {
             ))}
 
             {/* Key Insight */}
-            <div className="p-4 rounded-xl bg-accent-cyan/5 border border-accent-cyan/20">
-              <p className="text-xs font-mono text-accent-cyan uppercase tracking-wider mb-2">
-                Key Insight
-              </p>
-              <p className="text-sm text-foreground leading-relaxed">
-                Test flakiness is the <span className="text-accent-cyan font-semibold">root cause</span> of
-                a cascade that degrades CI, velocity, and documentation over a 3-week chain reaction.
-              </p>
-            </div>
+            {causalLinks.length > 0 && (
+              <div className="p-4 rounded-xl bg-accent-cyan/5 border border-accent-cyan/20">
+                <p className="text-xs font-mono text-accent-cyan uppercase tracking-wider mb-2">
+                  Key Insight
+                </p>
+                <p className="text-sm text-foreground leading-relaxed">
+                  Strongest correlation: <span className="text-accent-cyan font-semibold">r={causalLinks[0].correlation}</span> — {causalLinks[0].description}
+                </p>
+              </div>
+            )}
           </motion.div>
         </div>
       </div>
