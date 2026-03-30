@@ -280,6 +280,8 @@ Add `GITHUB_TOKEN` as an env variable for high-volume usage.
 
 ### DX-RAY RAPTORS
 
+**Developed by [Azhan Ali](https://github.com/azhan-ali) | TeamG**
+
 *Built for the hackathon. Built to ship.*
 
 </div>
@@ -304,5 +306,7 @@ MIT — use it, fork it, ship it.
 ```
 
 **[Try the Live Demo →](https://dx-ray-raptors.vercel.app/)**
+
+*Developed by Azhan Ali | TeamG*
 
 </div>
