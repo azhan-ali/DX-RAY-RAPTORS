@@ -226,28 +226,53 @@ function detectAnomalies(dims: DimensionResult[]): AnomalyEvent[] {
 
 // ─── Gemini AI ──────────────────────────────────────────────────────────────
 
+const GEMINI_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-pro"];
+
 async function callGemini(prompt: string): Promise<string | null> {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
-        }),
+  if (!apiKey) { console.log("[DX Ghost] No GEMINI_API_KEY set, using fallback templates"); return null; }
+
+  for (const model of GEMINI_MODELS) {
+    try {
+      console.log(`[DX Ghost] Trying model: ${model}`);
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
+          }),
+        }
+      );
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => "unknown");
+        console.error(`[DX Ghost] ${model} returned ${res.status}: ${errBody.slice(0, 200)}`);
+        continue;
       }
-    );
-    if (!res.ok) { console.error(`[DX Ghost] Gemini API error: ${res.status}`); return null; }
-    const data = await res.json();
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
-  } catch (err) {
-    console.error("[DX Ghost] Gemini call failed:", err);
-    return null;
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) { console.log(`[DX Ghost] ${model} returned ${text.length} chars`); return text; }
+      console.error(`[DX Ghost] ${model} returned empty content`);
+    } catch (err) {
+      console.error(`[DX Ghost] ${model} failed:`, err);
+    }
   }
+  console.error("[DX Ghost] All Gemini models failed");
+  return null;
+}
+
+function extractJSON(raw: string): unknown | null {
+  // Try direct parse first
+  try { return JSON.parse(raw.trim()); } catch { /* continue */ }
+  // Strip markdown fences
+  const fenced = raw.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+  if (fenced) { try { return JSON.parse(fenced[1].trim()); } catch { /* continue */ } }
+  // Find first [ ... ] block
+  const arrMatch = raw.match(/(\[\s*\{[\s\S]*\}\s*\])/);
+  if (arrMatch) { try { return JSON.parse(arrMatch[1]); } catch { /* continue */ } }
+  return null;
 }
 
 function fallbackPatches(dims: DimensionResult[], tree: GHTreeItem[], ci: Record<string, unknown>, test: Record<string, unknown>): GhostPatch[] {
@@ -300,28 +325,26 @@ Each patch object must have:
 Respond with ONLY the JSON array, no markdown fences, no explanation.`;
 
   const raw = await callGemini(prompt);
-  if (!raw) return fallbackPatches(dims, tree, ci, test);
+  if (!raw) { console.log("[DX Ghost] No Gemini response, using fallback"); return fallbackPatches(dims, tree, ci, test); }
 
-  try {
-    // Extract JSON array from response (handle potential markdown fences)
-    const jsonStr = raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    const parsed = JSON.parse(jsonStr);
-    if (!Array.isArray(parsed) || parsed.length === 0) return fallbackPatches(dims, tree, ci, test);
-
-    return parsed.slice(0, 5).map((p: Record<string, unknown>, i: number) => ({
-      id: i + 1,
-      title: String(p.title ?? "AI Fix"),
-      file: String(p.file ?? "unknown"),
-      language: String(p.language ?? "text"),
-      diff: String(p.diff ?? "+// AI-generated patch"),
-      impact: String(p.impact ?? "Improve DX"),
-      confidence: typeof p.confidence === "number" ? p.confidence : 80,
-      patchType: String(p.patchType ?? "ci_optimization"),
-    }));
-  } catch (err) {
-    console.error("[DX Ghost] Failed to parse Gemini response:", err);
+  console.log("[DX Ghost] Raw Gemini response:", raw.slice(0, 300));
+  const parsed = extractJSON(raw);
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    console.error("[DX Ghost] Could not extract valid JSON array from Gemini response");
     return fallbackPatches(dims, tree, ci, test);
   }
+
+  console.log(`[DX Ghost] Successfully parsed ${parsed.length} AI patches`);
+  return parsed.slice(0, 5).map((p: Record<string, unknown>, i: number) => ({
+    id: i + 1,
+    title: String(p.title ?? "AI Fix"),
+    file: String(p.file ?? "unknown"),
+    language: String(p.language ?? "text"),
+    diff: String(p.diff ?? "+// AI-generated patch"),
+    impact: String(p.impact ?? "Improve DX"),
+    confidence: typeof p.confidence === "number" ? p.confidence : 80,
+    patchType: String(p.patchType ?? "ci_optimization"),
+  }));
 }
 
 // ─── Before/After & Dev Hours ───────────────────────────────────────────────
